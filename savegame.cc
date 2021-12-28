@@ -7,7 +7,9 @@
 #include <string.h>
 
 #include "savegame.h"
+#include "savegame_json.h"
 
+void print_json(  const struct savegame   *sg);
 void print_head(  const struct savegame::head   *head);
 void print_player(const struct savegame::player *player,                        int just_this_one = -1);
 void print_other( const struct savegame::other  *other);
@@ -32,6 +34,7 @@ void print_help(const char *prog){
 	fprintf(stderr, "-o, --other      displays other section of savegame  \n");
 	fprintf(stderr, "-s, --stuff      displays stuff section of savegame  \n");
 	fprintf(stderr, "-m, --map        displays map section of savegame    \n");
+	fprintf(stderr, "-J, --json       displays parsed savegame in JSON    \n");
 	fprintf(stderr, "                                                     \n");
 	fprintf(stderr, "If N is given, displays a single entry in the section\n");
 	fprintf(stderr, "-pN, --player=N  displays player section of savegame \n");
@@ -63,7 +66,7 @@ int main(int argc, char *argv[])
 	 */
 	int opt_head = 0, opt_player = 0, opt_other = 0, opt_colony = 0, opt_unit = 0,
 	    opt_nation = 0, opt_tribe = 0, opt_stuff = 0, opt_indian = 0, opt_map = 0,
-	    opt_tail = 0, opt_help = 0, opt_colony10 = 0;
+	    opt_tail = 0, opt_help = 0, opt_json = 0, opt_colony10 = 0;
 
 	static struct option long_options[] = {
 		{ "head",     no_argument,       NULL,          'H' },
@@ -77,12 +80,13 @@ int main(int argc, char *argv[])
 		{ "stuff",    no_argument,       NULL,          's' },
 		{ "map",      no_argument,       NULL,          'm' },
 		{ "tail",     no_argument,       NULL,          'T' },
+		{ "json",     no_argument,       NULL,          'J' },
 		{ "colony10", no_argument,       &opt_colony10, -1  },
 		{ "help",     no_argument,       NULL,          'h' },
 		{ NULL,       no_argument, NULL,  0  }
 	};
 
-	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::t::i::smTh", long_options, &optindex)) != -1) {
+	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::t::i::smThJ", long_options, &optindex)) != -1) {
 		switch (c) {
 
 			case 0:
@@ -123,6 +127,7 @@ int main(int argc, char *argv[])
 			case 's': opt_stuff  = -1; break;
 			case 'm': opt_map    = -1; break;
 			case 'T': opt_tail   = -1; break;
+			case 'J': opt_json   = -1; break;
 
 			case '?': /* fall through to 'h'*/
 				fprintf(stderr, "Unknown option '%s'\n", argv[optind-1]);
@@ -176,6 +181,9 @@ int main(int argc, char *argv[])
 		res = fread(&sg.tail, sizeof (struct savegame::tail), 1, fp);
 	
 		fclose(fp);
+
+        if (opt_json)
+            print_json(&(sg));
 	
 		if (opt_head)
 			print_head(&(sg.head));
