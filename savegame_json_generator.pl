@@ -4,6 +4,9 @@ use warnings;
 use Path::Tiny qw(path);
 use Data::Dumper;
 use JSON;
+
+our $INDENT = " " x 4;
+
 my @lines;
 {
     my $content = path('savegame.h')->slurp;
@@ -29,15 +32,15 @@ foreach my $line (@lines) {
         push @id, $struct;
         next;
     }
-    my ( $chunk, $name, $suffix, $comment ) = get_chunk($line);
+    my ( $chunk, $name, $suffix, $hints ) = get_chunk($line);
     if ($chunk) {
         my $bytes = get_bytes( $chunk, $suffix );
         if ($leading) {
-            $comment = "$leading,$comment";
+            $hints = "$leading,$hints";
             $leading = '';
         }
-        $comment =~ s/\n//g;
-        set_data( \%DATA, $bytes, $comment, @id, $name );
+        $hints =~ s/\n//g;
+        set_data( \%DATA, $bytes, $hints, @id, $name );
         next;
     }
     if ( is_return($line) ) {
@@ -47,26 +50,32 @@ foreach my $line (@lines) {
     die "DATA=" . Dumper( \%DATA ) . " line=$line id=$id_string";
 }
 
-sub standard_lines {
+sub set_json {
+    my (@keys)     = @_;
+    my $key_string = join '.', @keys;
+    return 'j["' . ( join '"]["', @keys, 'value"]' ) . " = sg->$key_string;";
+}
+
+sub set_json_section {
     my ( $data, $section ) = @_;
     my @lines;
     while ( my ( $key, $value ) = each %{ $data->{$section} } ) {
         if ( $value->{order} ) {
-            push @lines,
-                  'j["'
-                . ( join '"]["', $section, $key, 'is"]' )
-                . " = sg->$section.$key;";
+            push @lines, set_json( $section, $key );
         }
         else {
             foreach my $subkey ( keys %{$value} ) {
-                push @lines,
-                      'j["'
-                    . ( join '"]["', $section, $key, $subkey, 'is"]' )
-                    . " = sg->$section.$key.$subkey;";
+                push @lines, set_json( $section, $key, $subkey );
             }
         }
     }
-    my $lines_string = join "\n    ", @lines;
+    return @lines;
+}
+
+sub render_merge_function {
+    my ( $data, $section ) = @_;
+    my @lines        = set_json_section( $data, $section );
+    my $lines_string = join "\n$INDENT", @lines;
     return <<ENDTEXT;
 
 json merge_json_$section(        const struct savegame *sg, json j )
@@ -77,11 +86,43 @@ json merge_json_$section(        const struct savegame *sg, json j )
 ENDTEXT
 }
 
-my $merge_json_functions = join "\n",
-    map { standard_lines( \%DATA, $_ ) } 'head',
-    'other',
-    'stuff',
-    'tail';
+#TODO j["player_list"][i]["nation"]["value"] = nation_list[i];
+sub render_merge_list_function {
+    my ( $data, $section ) = @_;
+    my $section_list = $section . "_list";
+    my @lines        = set_json_section( $data, $section );
+    my @loop_lines;
+    foreach my $line (@lines) {
+        $line =~ s/$section"]/$section_list"][i]/;
+        $line =~ s/$section\./$section\[i\]./;
+        push @loop_lines, $line;
+
+    }
+
+    my $joiner            = "\n" . ( $INDENT x 2 );
+    my $loop_lines_string = join $joiner, @loop_lines;
+    return <<ENDTEXT;
+
+json merge_json_$section_list(   const struct savegame *sg, json j )
+{
+    json base = j["$section"];
+
+    for (int i = 0; i < 4; ++i) {
+        j["$section_list"][i] = base;
+        $loop_lines_string
+    }
+    return j;
+}
+ENDTEXT
+}
+
+my $all_functions = join "\n",
+    (
+    map { render_merge_function( \%DATA, $_ ) } 'head',
+    'other', 'stuff', 'tail'
+    ),
+    ( map { render_merge_list_function( \%DATA, $_ ) } 'player' );
+
 my $json = JSON->new->pretty->encode( \%DATA );
 
 # )" is our terminator, so we can't have it in our output
@@ -138,21 +179,8 @@ void print_json( const struct savegame *sg )
 
 }
 
-json merge_json_player_list( const struct savegame *sg, json j )
-{
-    json p = j["player"];
 
-    for (int i = 0; i < 4; ++i) {
-        j["player_list"][i] = p;
-        j["player_list"][i]["nation"]["is"] = nation_list[i];
-        j["player_list"][i]["name"]["is"] = sg->player[i].name;
-        j["player_list"][i]["country"]["is"] = sg->player[i].country;
-    }
-
-    return j
-}
-
-$merge_json_functions
+$all_functions
 
 json json_base() {
     auto j = R"(
@@ -165,7 +193,7 @@ ENDTEXT
 exit;
 
 sub set_data {
-    my ( $hash, $bytes, $comment, @id ) = @_;
+    my ( $hash, $bytes, $hints, @id ) = @_;
     my $last   = pop @id;
     my $so_far = '';
     foreach my $part (@id) {
@@ -178,11 +206,11 @@ sub set_data {
     die "$so_far.$last already exists: " . Dumper($exists) if $exists;
     $ORDER++;
 
- #print "Setting $so_far.$last, order=$ORDER bytes=$bytes comment=$comment\n";
+ #print "Setting $so_far.$last, order=$ORDER bytes=$bytes hints=$hints\n";
     $hash->{$last} = {
         order   => $ORDER,
         bytes   => $bytes,
-        comment => $comment,
+        hints => $hints,
     };
 }
 
@@ -196,10 +224,10 @@ sub get_struct {
 sub get_chunk {
     my ($line) = @_;
     my $chunk_match = '(char|u?int\d+_t)';
-    my ( $chunk, $name, $suffix, $comment )
+    my ( $chunk, $name, $suffix, $hints )
         = ( $line =~ m/$chunk_match\s+([a-z_0-9A-Z]+)\D*(\d+\D*)?;(.*)/ );
     $suffix =~ s/\D//g if $suffix;
-    return ( $chunk, $name, $suffix, $comment );
+    return ( $chunk, $name, $suffix, $hints );
 }
 
 sub get_bytes {
