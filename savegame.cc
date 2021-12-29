@@ -1010,10 +1010,10 @@ void print_indian(const struct savegame::indian_relations *ir, int just_this_one
 
 		for (int j = 0; j < 4; ++j) {
 			switch (j) {
-				case 0: printf("eng_met(%02x) ", ir[i].meeting[j].met); break;
-				case 1: printf("fra_met(%02x) ", ir[i].meeting[j].met); break;
-				case 2: printf("spa_met(%02x) ", ir[i].meeting[j].met); break;
-				case 3: printf("dut_met(%02x) ", ir[i].meeting[j].met); break;
+				case 0: printf("eng_met(%02x) ", ir[i].meeting[j]); break;
+				case 1: printf("fra_met(%02x) ", ir[i].meeting[j]); break;
+				case 2: printf("spa_met(%02x) ", ir[i].meeting[j]); break;
+				case 3: printf("dut_met(%02x) ", ir[i].meeting[j]); break;
 				default: printf("ERROR"); break;
 			}
 		}
@@ -1024,13 +1024,13 @@ void print_indian(const struct savegame::indian_relations *ir, int just_this_one
 
 		for (int j = 0; j < 4; ++j) {
 			switch (j) {
-				case 0: printf("eng_aggr(%3d) ", ir[i].aggr[j].aggr); break;
-				case 1: printf("fra_aggr(%3d) ", ir[i].aggr[j].aggr); break;
-				case 2: printf("spa_aggr(%3d) ", ir[i].aggr[j].aggr); break;
-				case 3: printf("dut_aggr(%3d) ", ir[i].aggr[j].aggr); break;
+				case 0: printf("eng_aggr(%3d) ", ir[i].aggr[j]); break;
+				case 1: printf("fra_aggr(%3d) ", ir[i].aggr[j]); break;
+				case 2: printf("spa_aggr(%3d) ", ir[i].aggr[j]); break;
+				case 3: printf("dut_aggr(%3d) ", ir[i].aggr[j]); break;
 				default: printf("ERROR"); break;
 			}
-			assert(ir[i].aggr[j].aggr_high == 0);
+			assert(ir[i].aggr[j] <= 255 );
 		}
 		printf("\n");
 

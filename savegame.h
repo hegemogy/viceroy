@@ -399,17 +399,9 @@ struct savegame {
 
 	struct indian_relations {
 		uint8_t unk0[58];
-
-		struct meeting {
-			uint8_t met;
-		} __attribute__ ((packed)) meeting[4];
-
+		uint8_t meeting[4];
 		uint8_t unk1[8];
-
-		struct aggr {
-			uint8_t aggr;
-			uint8_t aggr_high;
-		} __attribute__ ((packed)) aggr[4];
+        uint16_t aggr[4];
 	} __attribute__ ((packed)) indian_relations[8];
 
 	struct stuff {
