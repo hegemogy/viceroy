@@ -162,21 +162,29 @@ int main(int argc, char *argv[])
 	
 		size_t res = 0;
 		res = fread(&sg.head, sizeof (struct savegame::head), 1, fp);
-		res = fread(&sg.player, sizeof (struct savegame::player), 4, fp);
+
+        sg.count.colony = sg.head.colony_count;
+        sg.count.unit   = sg.head.unit_count;
+        sg.count.tribe  = sg.head.tribe_count;
+        sg.count.indian = 8;
+        sg.count.player = 4;
+        sg.count.nation = 4;
+
+		res = fread(&sg.player, sizeof (struct savegame::player), sg.count.player, fp);
 		res = fread(&sg.other, sizeof (struct savegame::other), 1, fp);
 
-		sg.colony = (struct savegame::colony *) malloc(sizeof (struct savegame::colony) * sg.head.colony_count);
-		res = fread(sg.colony, sizeof (struct savegame::colony), sg.head.colony_count, fp);
+		sg.colony = (struct savegame::colony *) malloc(sizeof (struct savegame::colony) * sg.count.colony);
+		res = fread(sg.colony, sizeof (struct savegame::colony), sg.count.colony, fp);
 	
-		sg.unit   = (struct savegame::unit *)   malloc(sizeof (struct savegame::unit)   * sg.head.unit_count);
-		res = fread(sg.unit, sizeof (struct savegame::unit), sg.head.unit_count, fp);
+		sg.unit   = (struct savegame::unit *)   malloc(sizeof (struct savegame::unit)   * sg.count.unit);
+		res = fread(sg.unit, sizeof (struct savegame::unit), sg.count.unit, fp);
 	
-		res = fread(sg.nation, sizeof (struct savegame::nation), 4, fp);
+		res = fread(sg.nation, sizeof (struct savegame::nation), sg.count.nation, fp);
 	
-		sg.tribe  = (struct savegame::tribe *)  malloc(sizeof (struct savegame::tribe)  * sg.head.tribe_count);
-		res = fread(sg.tribe, sizeof (struct savegame::tribe), sg.head.tribe_count, fp);
-	
-		res = fread(&sg.indian, sizeof (struct savegame::indian), 8, fp);
+		sg.tribe  = (struct savegame::tribe *)  malloc(sizeof (struct savegame::tribe)  * sg.count.tribe);
+		res = fread(sg.tribe, sizeof (struct savegame::tribe), sg.count.tribe, fp);
+        
+        res = fread(&sg.indian, sizeof (struct savegame::indian), sg.count.indian, fp);
 		res = fread(&sg.stuff, sizeof (struct savegame::stuff), 1, fp);
 		res = fread(&sg.map, sizeof (struct savegame::map), 1, fp);
 		res = fread(&sg.tail, sizeof (struct savegame::tail), 1, fp);
@@ -284,18 +292,16 @@ int main(int argc, char *argv[])
 				// Opposing nations, remove pesky stockades
 				sg.colony[i].buildings.stockade = 0;
 			}
-
-
 	
 			FILE *fop = fopen("COLONY10.SAV", "w");
 			fwrite(&sg.head, sizeof (struct savegame::head), 1, fop);
-			fwrite(&sg.player, sizeof (struct savegame::player), 4, fop);
+			fwrite(&sg.player, sizeof (struct savegame::player), sg.count.player, fop);
 			fwrite(&sg.other, sizeof (struct savegame::other), 1, fop);
-			fwrite(sg.colony, sizeof (struct savegame::colony), sg.head.colony_count, fop);
-			fwrite(sg.unit, sizeof (struct savegame::unit), sg.head.unit_count, fop);
-			fwrite(sg.nation, sizeof (struct savegame::nation), 4, fop);
-			fwrite(sg.tribe, sizeof (struct savegame::tribe), sg.head.tribe_count, fop);
-			fwrite(sg.indian, sizeof (struct savegame::indian), 8, fop);
+			fwrite(sg.colony, sizeof (struct savegame::colony), sg.count.colony, fop);
+			fwrite(sg.unit, sizeof (struct savegame::unit), sg.count.colony, fop);
+			fwrite(sg.nation, sizeof (struct savegame::nation), sg.count.nation, fop);
+			fwrite(sg.tribe, sizeof (struct savegame::tribe), sg.count.tribe, fop);
+			fwrite(sg.indian, sizeof (struct savegame::indian), sg.count.indian, fop);
 			fwrite(&sg.stuff, sizeof (struct savegame::stuff), 1, fop);
 			fwrite(&sg.map, sizeof (struct savegame::map), 1, fop);
 			fwrite(&sg.tail, sizeof(struct savegame::tail), 1, fop);

@@ -129,7 +129,16 @@ static const char *difficulty_list[] = {
 };
 
 struct savegame {
-
+    
+    struct count {
+        uint16_t colony;
+        uint16_t unit;
+        uint16_t tribe;
+        uint16_t player;
+        uint16_t nation;
+        uint16_t indian;
+	} __attribute__ ((packed)) count;
+    
 	struct head {
 		char sig_colonize[9];
 		uint8_t unk0[ 3];
