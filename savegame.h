@@ -397,12 +397,12 @@ struct savegame {
 		uint8_t population_loss_in_current_turn; //due to attacks
 	} __attribute__ ((packed)) *tribe;
 
-	struct indian_relations {
+	struct indian {
 		uint8_t unk0[58];
 		uint8_t meeting[4];
 		uint8_t unk1[8];
         uint16_t aggr[4];
-	} __attribute__ ((packed)) indian_relations[8];
+	} __attribute__ ((packed)) indian[8];
 
 	struct stuff {
 		uint8_t unk15[15];

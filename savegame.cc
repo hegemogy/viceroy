@@ -17,7 +17,7 @@ void print_colony(const struct savegame::colony *colony, uint16_t colony_count, 
 void print_unit(  const struct savegame::unit   *unit,   uint16_t unit_count,   int just_this_one = -1);
 void print_nation(const struct savegame::nation *nation,                        int just_this_one = -1);
 void print_tribe( const struct savegame::tribe  *tribe,  uint16_t tribe_count,  int just_this_one = -1);
-void print_indian(const struct savegame::indian_relations *ir,                  int just_this_one = -1);
+void print_indian(const struct savegame::indian *indian,                        int just_this_one = -1);
 void print_stuff( const struct savegame::stuff  *stuff);
 void print_map(   const struct savegame::map    *map);
 void print_tail(  const struct savegame::tail   *tail);
@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
 	assert(sizeof (struct savegame::unit)   ==  28);
 	assert(sizeof (struct savegame::nation) == 316);
 	assert(sizeof (struct savegame::tribe)  ==  18);
+	assert(sizeof (struct savegame::indian) ==  78);
 	assert(sizeof (struct savegame::stuff)  == 727);
 	assert(sizeof (struct savegame::map)    == 58*72*4);
 
@@ -175,7 +176,7 @@ int main(int argc, char *argv[])
 		sg.tribe  = (struct savegame::tribe *)  malloc(sizeof (struct savegame::tribe)  * sg.head.tribe_count);
 		res = fread(sg.tribe, sizeof (struct savegame::tribe), sg.head.tribe_count, fp);
 	
-		res = fread(&sg.indian_relations, sizeof (struct savegame::indian_relations), 8, fp);
+		res = fread(&sg.indian, sizeof (struct savegame::indian), 8, fp);
 		res = fread(&sg.stuff, sizeof (struct savegame::stuff), 1, fp);
 		res = fread(&sg.map, sizeof (struct savegame::map), 1, fp);
 		res = fread(&sg.tail, sizeof (struct savegame::tail), 1, fp);
@@ -207,7 +208,7 @@ int main(int argc, char *argv[])
 			print_tribe(sg.tribe, sg.head.tribe_count, (opt_tribe == -1) ? opt_tribe : opt_tribe - 1);
 	
 		if (opt_indian)
-			print_indian(sg.indian_relations, (opt_indian == -1) ? opt_indian : opt_indian - 1);
+			print_indian(sg.indian, (opt_indian == -1) ? opt_indian : opt_indian - 1);
 	
 		if (opt_stuff)
 			print_stuff(&(sg.stuff));
@@ -294,7 +295,7 @@ int main(int argc, char *argv[])
 			fwrite(sg.unit, sizeof (struct savegame::unit), sg.head.unit_count, fop);
 			fwrite(sg.nation, sizeof (struct savegame::nation), 4, fop);
 			fwrite(sg.tribe, sizeof (struct savegame::tribe), sg.head.tribe_count, fop);
-			fwrite(sg.indian_relations, sizeof (struct savegame::indian_relations), 8, fop);
+			fwrite(sg.indian, sizeof (struct savegame::indian), 8, fop);
 			fwrite(&sg.stuff, sizeof (struct savegame::stuff), 1, fop);
 			fwrite(&sg.map, sizeof (struct savegame::map), 1, fop);
 			fwrite(&sg.tail, sizeof(struct savegame::tail), 1, fop);
@@ -986,7 +987,7 @@ void print_tribe(const struct savegame::tribe  *tribe,  uint16_t tribe_count, in
 	printf("\n");
 }
 
-void print_indian(const struct savegame::indian_relations *ir, int just_this_one)
+void print_indian(const struct savegame::indian *indian, int just_this_one)
 {
 	printf("-- indian --\n");
 
@@ -1004,33 +1005,33 @@ void print_indian(const struct savegame::indian_relations *ir, int just_this_one
 			case 7: printf("Tupi    :"); break;
 		}
 
-		for (int j = 0; j < sizeof (ir[i].unk0); ++j) {
-			printf("%02x ", ir[i].unk0[j]);
+		for (int j = 0; j < sizeof (indian[i].unk0); ++j) {
+			printf("%02x ", indian[i].unk0[j]);
 		}
 
 		for (int j = 0; j < 4; ++j) {
 			switch (j) {
-				case 0: printf("eng_met(%02x) ", ir[i].meeting[j]); break;
-				case 1: printf("fra_met(%02x) ", ir[i].meeting[j]); break;
-				case 2: printf("spa_met(%02x) ", ir[i].meeting[j]); break;
-				case 3: printf("dut_met(%02x) ", ir[i].meeting[j]); break;
+				case 0: printf("eng_met(%02x) ", indian[i].meeting[j]); break;
+				case 1: printf("fra_met(%02x) ", indian[i].meeting[j]); break;
+				case 2: printf("spa_met(%02x) ", indian[i].meeting[j]); break;
+				case 3: printf("dut_met(%02x) ", indian[i].meeting[j]); break;
 				default: printf("ERROR"); break;
 			}
 		}
 
-		for (int j = 0; j < sizeof (ir[i].unk1); ++j) {
-			printf("%02x ", ir[i].unk1[j]);
+		for (int j = 0; j < sizeof (indian[i].unk1); ++j) {
+			printf("%02x ", indian[i].unk1[j]);
 		}
 
 		for (int j = 0; j < 4; ++j) {
 			switch (j) {
-				case 0: printf("eng_aggr(%3d) ", ir[i].aggr[j]); break;
-				case 1: printf("fra_aggr(%3d) ", ir[i].aggr[j]); break;
-				case 2: printf("spa_aggr(%3d) ", ir[i].aggr[j]); break;
-				case 3: printf("dut_aggr(%3d) ", ir[i].aggr[j]); break;
+				case 0: printf("eng_aggr(%3d) ", indian[i].aggr[j]); break;
+				case 1: printf("fra_aggr(%3d) ", indian[i].aggr[j]); break;
+				case 2: printf("spa_aggr(%3d) ", indian[i].aggr[j]); break;
+				case 3: printf("dut_aggr(%3d) ", indian[i].aggr[j]); break;
 				default: printf("ERROR"); break;
 			}
-			assert(ir[i].aggr[j] <= 255 );
+			assert(indian[i].aggr[j] <= 255 );
 		}
 		printf("\n");
 
