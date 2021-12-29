@@ -101,8 +101,9 @@ json merge_json_other(       const struct savegame *sg, json j );
 json merge_json_stuff(       const struct savegame *sg, json j );
 json merge_json_tail(        const struct savegame *sg, json j );
 
-/*
 json merge_json_player_list( const struct savegame *sg, json j );
+
+/*
 json merge_json_colony_list( const struct savegame *sg, json j );
 json merge_json_unit_list(   const struct savegame *sg, json j );
 json merge_json_nation_list( const struct savegame *sg, json j );
@@ -120,10 +121,11 @@ void print_json( const struct savegame *sg )
     j = merge_json_stuff(       sg , j );
     j = merge_json_tail(        sg , j );
     
+    j = merge_json_player_list( sg , j );
+
     std::cout << j.dump(4) << std::endl;
 
 /*
-    j = merge_json_player_list( sg , j );
     j = merge_json_colony_list( sg , j );
     j = merge_json_unit_list(   sg , j );
     j = merge_json_nation_list( sg , j );
@@ -131,6 +133,13 @@ void print_json( const struct savegame *sg )
     j = merge_json_indian_list( sg , j );
     j = merge_json_map(         sg , j );
 
+    std::cout << j.dump(4) << std::endl;
+*/
+
+}
+
+json merge_json_player_list( const struct savegame *sg, json j )
+{
     json p = j["player"];
 
     for (int i = 0; i < 4; ++i) {
@@ -140,9 +149,7 @@ void print_json( const struct savegame *sg )
         j["player_list"][i]["country"]["is"] = sg->player[i].country;
     }
 
-    std::cout << j.dump(4) << std::endl;
-*/
-
+    return j
 }
 
 $merge_json_functions
