@@ -53,19 +53,37 @@ foreach my $line (@lines) {
 sub set_json {
     my (@keys)     = @_;
     my $key_string = join '.', @keys;
-    return 'j["' . ( join '"]["', @keys, 'value"]' ) . " = sg->$key_string;";
+    my $value = "sg->$key_string";
+    if ($key_string =~ m/(buildings|rebel_|hammers|custom_house)/) {
+        $value = 'uint8_t( '.$value.' )';
+    }
+    my $line ='j["' . ( join '"]["', @keys, 'value"]' ) . " = $value;";
+    if ($line =~ m/colony.*"stock"/){
+        my $var = 'colony_stock';
+        my $new_line = "uint16_t $var\[] = {\n";
+        $new_line .= "\t\t\tsg->colony[i].stock[$_],\n" foreach 0..15;
+        $new_line .= "\t\t};\n";
+        $line =~ s/=.*/= $var;/;
+        $line = "$new_line\t\t$line";
+    }
+    return $line;
 }
 
 sub set_json_section {
-    my ( $data, $section ) = @_;
+    my ( $data, $section, @parent_keys ) = @_;
     my @lines;
     while ( my ( $key, $value ) = each %{ $data->{$section} } ) {
         if ( $value->{order} ) {
-            push @lines, set_json( $section, $key );
+            push @lines, set_json( $section,@parent_keys,$key );
         }
         else {
-            foreach my $subkey ( keys %{$value} ) {
-                push @lines, set_json( $section, $key, $subkey );
+            while (my ($subkey,$subvalue) = each %{$value} ) {
+                if ( $subvalue->{order} ) {
+                    push @lines, set_json( $section, $key, $subkey );
+                }
+                else {
+                    print "RECURSE key=$key subkey=$subkey subvalue=".Dumper($subvalue);
+                }
             }
         }
     }
@@ -97,7 +115,9 @@ sub render_merge_list_function {
         $line =~ s/$section\./$section\[i\]./;
         push @loop_lines, $line;
     }
-
+    my $label_line = ($section_list=~m/(nation}player|indian)/)?<<ENDTEXT:"";
+        j["$section_list"][i]["_label"] = $section_list\[i];
+ENDTEXT
     my $joiner            = "\n" . ( $INDENT x 2 );
     my $loop_lines_string = join $joiner, @loop_lines;
     return <<ENDTEXT;
@@ -108,7 +128,7 @@ json merge_json_$section_list(   const struct savegame *sg, json j )
 
     for (int i = 0; i < sg->count.$section; ++i) {
         j["$section_list"][i] = base;
-        j["$section_list"][i]["_label"] = $section_list\[i];
+        $label_line
         $loop_lines_string
     }
     return j;
@@ -118,10 +138,13 @@ ENDTEXT
 
 my $all_functions = join "\n",
     (
-    map { render_merge_function( \%DATA, $_ ) } 'head',
-    'other', 'stuff', 'tail'
+    map { render_merge_function( \%DATA, $_ ) } (),
+    'head', 'other', 'stuff', 'tail'
     ),
-    ( map { render_merge_list_function( \%DATA, $_ ) } 'player','nation','indian' );
+    ( map { render_merge_list_function( \%DATA, $_ ) } (),
+    'player','nation','indian',
+    'colony' 
+);
 
 my $json = JSON->new->pretty->encode( \%DATA );
 
@@ -147,8 +170,9 @@ json merge_json_player_list( const struct savegame *sg, json j );
 json merge_json_nation_list( const struct savegame *sg, json j );
 json merge_json_indian_list( const struct savegame *sg, json j );
 
-/*
 json merge_json_colony_list( const struct savegame *sg, json j );
+
+/*
 json merge_json_unit_list(   const struct savegame *sg, json j );
 json merge_json_tribe_list(  const struct savegame *sg, json j );
 json merge_json_map(         const struct savegame *sg, json j );
@@ -167,10 +191,11 @@ void print_json( const struct savegame *sg )
     j = merge_json_nation_list( sg , j );
     j = merge_json_indian_list( sg , j );
 
+    j = merge_json_colony_list( sg , j );
+
     std::cout << j.dump(4) << std::endl;
 
 /*
-    j = merge_json_colony_list( sg , j );
     j = merge_json_unit_list(   sg , j );
     j = merge_json_tribe_list(  sg , j );
     j = merge_json_map(         sg , j );
