@@ -281,7 +281,8 @@ struct savegame {
 	} __attribute__ ((packed)) other;
 
 	struct colony {
-		uint8_t x, y;
+		uint8_t x;
+		uint8_t y;
 		char name[24];
 		uint8_t nation;
 		uint8_t unk0[ 4];
@@ -346,7 +347,8 @@ struct savegame {
 	} __attribute__ ((packed)) *colony;
 
 	struct unit {
-		uint8_t x, y;
+		uint8_t x;
+		uint8_t y;
 		uint8_t type;
 		uint8_t nation : 4; /* likely to be owner of unit, eng, fra, spa, dut, indian tribes, etc. */
 		uint8_t unk04 : 4;
@@ -406,7 +408,8 @@ struct savegame {
 	} __attribute__ ((packed)) nation[4];
 
 	struct tribe {
-		uint8_t x, y;
+		uint8_t x;
+		uint8_t y;
 		uint8_t nation;
 		struct state {
 			uint8_t artillery : 1; //artillery has been nearby?
