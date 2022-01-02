@@ -800,7 +800,7 @@ void print_unit(  const struct savegame::unit   *unit,   uint16_t unit_count, in
 	for (int i = start; i < unit_count; ++i) {
 		printf("[%3d] (%3d, %3d): %-19s ", i, unit[i].x, unit[i].y, unit_type_list[unit[i].type]);
 
-		printf("%-11s ", nation_list[unit[i].owner] );
+		printf("%-11s ", nation_list[unit[i].nation] );
 		printf("m:%02x ", unit[i].moves);
 
 		printf("tw:%d ", unit[i].turns_worked);
@@ -921,21 +921,12 @@ void print_nation(const struct savegame::nation *nation, int just_this_one)
 
 		for (int j = 0; j < 8; ++j) {
 			printf("Indian status - ");
-			switch (j) {
-				case 0: printf("Inca    :"); break;
-				case 1: printf("Aztec   :"); break;
-				case 2: printf("Awarak  :"); break;
-				case 3: printf("Iroquoi :"); break;
-				case 4: printf("Cherokee:"); break;
-				case 5: printf("Apache  :"); break;
-				case 6: printf("Sioux   :"); break;
-				case 7: printf("Tupi    :"); break;
-			}
-			switch (nation[i].indian_relation[j]) {
+			printf("%-8s:",indian_list[j]);
+			switch (nation[i].relation_by_indian[j]) {
 				case savegame::nation::WAR:     printf("war\n");     break;
 				case savegame::nation::PEACE:   printf("peace\n");   break;
 				case savegame::nation::NOT_MET: printf("not met\n"); break;
-				default: printf("unknown (%02x)\n", nation[i].indian_relation[j]);
+				default: printf("unknown (%02x)\n", nation[i].relation_by_indian[j]);
 			}
 		}
 
@@ -1000,29 +991,14 @@ void print_indian(const struct savegame::indian *indian, int just_this_one)
 	int start = (just_this_one == -1) ? 0 : just_this_one;
 
 	for (int i = 0; i < 8; ++i) {
-		switch (i) {
-			case 0: printf("Inca    :"); break;
-			case 1: printf("Aztec   :"); break;
-			case 2: printf("Awarak  :"); break;
-			case 3: printf("Iroquoi :"); break;
-			case 4: printf("Cherokee:"); break;
-			case 5: printf("Apache  :"); break;
-			case 6: printf("Sioux   :"); break;
-			case 7: printf("Tupi    :"); break;
-		}
+        printf("%-8s:", indian_list[i]);
 
 		for (int j = 0; j < sizeof (indian[i].unk0); ++j) {
 			printf("%02x ", indian[i].unk0[j]);
 		}
 
 		for (int j = 0; j < 4; ++j) {
-			switch (j) {
-				case 0: printf("eng_met(%02x) ", indian[i].meeting[j]); break;
-				case 1: printf("fra_met(%02x) ", indian[i].meeting[j]); break;
-				case 2: printf("spa_met(%02x) ", indian[i].meeting[j]); break;
-				case 3: printf("dut_met(%02x) ", indian[i].meeting[j]); break;
-				default: printf("ERROR"); break;
-			}
+			printf("%.*s_met(%3d) ", 3,player_list[j],indian[i].met_by_player[j]);
 		}
 
 		for (int j = 0; j < sizeof (indian[i].unk1); ++j) {
@@ -1030,14 +1006,8 @@ void print_indian(const struct savegame::indian *indian, int just_this_one)
 		}
 
 		for (int j = 0; j < 4; ++j) {
-			switch (j) {
-				case 0: printf("eng_aggr(%3d) ", indian[i].aggr[j]); break;
-				case 1: printf("fra_aggr(%3d) ", indian[i].aggr[j]); break;
-				case 2: printf("spa_aggr(%3d) ", indian[i].aggr[j]); break;
-				case 3: printf("dut_aggr(%3d) ", indian[i].aggr[j]); break;
-				default: printf("ERROR"); break;
-			}
-			assert(indian[i].aggr[j] <= 255 );
+			printf("%.*s_alarm(%3d) ", 3, player_list[j],indian[i].alarm_by_player[j]);
+			assert(indian[i].alarm_by_player[j] <= 255 );
 		}
 		printf("\n");
 

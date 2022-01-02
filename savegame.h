@@ -73,6 +73,26 @@ static const char *nation_list[] = {
 	/* 11 */ "Tupi",
 };
 
+/* 0-3 also used as index to player nation */
+static const char *player_list[] = {
+    nation_list[0],
+    nation_list[1],
+    nation_list[2],
+    nation_list[3],
+};
+
+/* 0-7 also used as index to indian nation */
+static const char *indian_list[] = {
+    nation_list[4],
+    nation_list[5],
+    nation_list[6],
+    nation_list[7],
+    nation_list[8],
+    nation_list[9],
+    nation_list[10],
+    nation_list[11],
+};
+
 static const char *cargo_list[] = {
 	"Food",
 	"Sugar",
@@ -328,7 +348,7 @@ struct savegame {
 	struct unit {
 		uint8_t x, y;
 		uint8_t type;
-		uint8_t owner : 4; /* likely to be owner of unit, eng, fra, spa, dut, indian tribes, etc. */
+		uint8_t nation : 4; /* likely to be owner of unit, eng, fra, spa, dut, indian tribes, etc. */
 		uint8_t unk04 : 4;
 		uint8_t unk05;
 		uint8_t moves; /* Accumulated moves (3 between land, 1 on roads, etc.) */
@@ -374,7 +394,7 @@ struct savegame {
 		uint32_t gold;
 		uint16_t crosses;
 		int16_t unk6[ 4];
-		uint8_t indian_relation[8]; enum { NOT_MET = 0x00, WAR = 0x20, PEACE = 0x60};
+		uint8_t relation_by_indian[8]; enum { NOT_MET = 0x00, WAR = 0x20, PEACE = 0x60};
 		uint8_t unk7[12];
 		struct trade {
 			uint8_t euro_price[16];
@@ -408,9 +428,9 @@ struct savegame {
 
 	struct indian {
 		uint8_t unk0[58];
-		uint8_t meeting[4];
-		uint8_t unk1[8];
-        uint16_t aggr[4];
+		uint8_t met_by_player[4];
+		uint8_t unk1[8]; 
+        uint16_t alarm_by_player[4];
 	} __attribute__ ((packed)) indian[8];
 
 	struct stuff {
