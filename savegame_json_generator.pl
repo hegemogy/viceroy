@@ -47,7 +47,7 @@ foreach my $line (@lines) {
         pop @id;
         next;
     }
-    die "DATA=" . Dumper( \%DATA ) . " line=$line id=$id_string";
+    die "DATA: " . Dumper( \%DATA ) . "line[$line] id[$id_string]\nERROR: Could not auto-generate from this line!";
 }
 
 sub set_json {
@@ -96,7 +96,6 @@ sub render_merge_list_function {
         $line =~ s/$section"]/$section_list"][i]/;
         $line =~ s/$section\./$section\[i\]./;
         push @loop_lines, $line;
-
     }
 
     my $joiner            = "\n" . ( $INDENT x 2 );
@@ -107,8 +106,9 @@ json merge_json_$section_list(   const struct savegame *sg, json j )
 {
     json base = j["$section"];
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < sg->count.$section; ++i) {
         j["$section_list"][i] = base;
+        j["$section_list"][i]["_label"] = $section_list\[i];
         $loop_lines_string
     }
     return j;
@@ -121,7 +121,7 @@ my $all_functions = join "\n",
     map { render_merge_function( \%DATA, $_ ) } 'head',
     'other', 'stuff', 'tail'
     ),
-    ( map { render_merge_list_function( \%DATA, $_ ) } 'player' );
+    ( map { render_merge_list_function( \%DATA, $_ ) } 'player','nation','indian' );
 
 my $json = JSON->new->pretty->encode( \%DATA );
 
@@ -137,19 +137,20 @@ using json = nlohmann::json;
 
 json json_base();
 void print_json(             const struct savegame *sg );
+
 json merge_json_head(        const struct savegame *sg, json j );
 json merge_json_other(       const struct savegame *sg, json j );
 json merge_json_stuff(       const struct savegame *sg, json j );
 json merge_json_tail(        const struct savegame *sg, json j );
 
 json merge_json_player_list( const struct savegame *sg, json j );
+json merge_json_nation_list( const struct savegame *sg, json j );
+json merge_json_indian_list( const struct savegame *sg, json j );
 
 /*
 json merge_json_colony_list( const struct savegame *sg, json j );
 json merge_json_unit_list(   const struct savegame *sg, json j );
-json merge_json_nation_list( const struct savegame *sg, json j );
 json merge_json_tribe_list(  const struct savegame *sg, json j );
-json merge_json_indian_list( const struct savegame *sg, json j );
 json merge_json_map(         const struct savegame *sg, json j );
 */
 
@@ -163,15 +164,15 @@ void print_json( const struct savegame *sg )
     j = merge_json_tail(        sg , j );
     
     j = merge_json_player_list( sg , j );
+    j = merge_json_nation_list( sg , j );
+    j = merge_json_indian_list( sg , j );
 
     std::cout << j.dump(4) << std::endl;
 
 /*
     j = merge_json_colony_list( sg , j );
     j = merge_json_unit_list(   sg , j );
-    j = merge_json_nation_list( sg , j );
     j = merge_json_tribe_list(  sg , j );
-    j = merge_json_indian_list( sg , j );
     j = merge_json_map(         sg , j );
 
     std::cout << j.dump(4) << std::endl;
@@ -242,7 +243,11 @@ sub get_bytes {
     $suffix //= 1;
 
     #print "base=$base suffix=$suffix\n";
-    return $base * $suffix;
+    return {
+        total => $base * $suffix,
+        base => $base,
+        suffix => $suffix,
+    };
 }
 
 sub is_return {
