@@ -54,7 +54,7 @@ sub set_json {
     my (@keys)     = @_;
     my $key_string = join '.', @keys;
     my $value = "sg->$key_string";
-    if ($key_string =~ m/(buildings|rebel_|hammers|custom_house|unit_idx|cargo_item|unit.*nation|unit.*unk04)/) {
+    if ($key_string =~ m/(buildings|rebel_|hammers|custom_house|unit_idx|cargo_item|unit.*nation|unit.*unk04|tribe.*state)/) {
         $value = 'uint16_t( '.$value.' )';
     }
     my $line ='j["' . ( join '"]["', @keys, 'value"]' ) . " = $value;";
@@ -144,7 +144,8 @@ my $all_functions = join "\n",
     ( map { render_merge_list_function( \%DATA, $_ ) } (),
     'player','nation','indian',
     'colony',
-   'unit', 
+    'unit', 
+    'tribe', 
 );
 
 my $json = JSON->new->pretty->encode( \%DATA );
@@ -173,9 +174,9 @@ json merge_json_indian_list( const struct savegame *sg, json j );
 
 json merge_json_colony_list( const struct savegame *sg, json j );
 json merge_json_unit_list(   const struct savegame *sg, json j );
+json merge_json_tribe_list(  const struct savegame *sg, json j );
 
 /*
-json merge_json_tribe_list(  const struct savegame *sg, json j );
 json merge_json_map(         const struct savegame *sg, json j );
 */
 
@@ -194,11 +195,11 @@ void print_json( const struct savegame *sg )
 
     j = merge_json_colony_list( sg , j );
     j = merge_json_unit_list(   sg , j );
+    j = merge_json_tribe_list(  sg , j );
 
     std::cout << j.dump(4) << std::endl;
 
 /*
-    j = merge_json_tribe_list(  sg , j );
     j = merge_json_map(         sg , j );
 
     std::cout << j.dump(4) << std::endl;
