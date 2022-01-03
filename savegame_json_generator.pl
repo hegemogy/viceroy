@@ -34,13 +34,13 @@ foreach my $line (@lines) {
     }
     my ( $chunk, $name, $suffix, $hints ) = get_chunk($line);
     if ($chunk) {
-        my $bytes = get_bytes( $chunk, $suffix );
+        my $bits = get_bits( $chunk, $suffix );
         if ($leading) {
             $hints = "$leading,$hints";
             $leading = '';
         }
         $hints =~ s/\n//g;
-        set_data( \%DATA, $bytes, $hints, @id, $name );
+        set_data( \%DATA, $bits, $hints, @id, $name );
         next;
     }
     if ( is_return($line) ) {
@@ -51,17 +51,29 @@ foreach my $line (@lines) {
 }
 
 sub set_json {
-    my (@keys)     = @_;
+    my ($bits,@keys)     = @_;
+    
     my $key_string = join '.', @keys;
     my $value = "sg->$key_string";
-    if ($key_string =~ m/(buildings|rebel_|hammers|custom_house|unit_idx|cargo_item|unit.*nation|unit.*unk04|tribe.*state)/) {
-        $value = 'uint16_t( '.$value.' )';
+
+    my ($total,$type,$items) = map {$bits->{$_}//die "Expected '$_'!"} 'total','type','array_items';
+    if (!$items){
+        $value = "($type) $value";
     }
+    
     my $line ='j["' . ( join '"]["', @keys, 'value"]' ) . " = $value;";
-    if ($line =~ m/colony.*"stock"/){
-        my $var = 'colony_stock';
-        my $new_line = "uint16_t $var\[] = {\n";
-        $new_line .= "\t\t\tsg->colony[i].stock[$_],\n" foreach 0..15;
+    
+    if ($items > 1 && $items <= 16) {
+        die $value.$line if $value =~ m/\[/;
+        my $var = $value;
+        $var =~ s/[^a-z0-9]/_/g;
+        $var =~ s/^_*//g;
+        $var =~ s/_*$//g;
+        $var =~ s/__+/_/g;
+        my $new_line = "$type $var\[] = {\n";
+        foreach my $index ( 0 .. ($items-1) ) {
+            $new_line .= "\t\t\t$value\[$index],\n";
+        }
         $new_line .= "\t\t};\n";
         $line =~ s/=.*/= $var;/;
         $line = "$new_line\t\t$line";
@@ -72,17 +84,21 @@ sub set_json {
 sub set_json_section {
     my ( $data, $section, @parent_keys ) = @_;
     my @lines;
-    while ( my ( $key, $value ) = each %{ $data->{$section} } ) {
-        if ( $value->{order} ) {
-            push @lines, set_json( $section,@parent_keys,$key );
+    foreach my $key (sort keys %{ $data->{$section} } ) {
+        my $value = $data->{$section}->{$key};
+        my $bits = $value->{bits};
+        if ( $bits ) {
+            push @lines, set_json($bits,$section,@parent_keys,$key );
         }
         else {
-            while (my ($subkey,$subvalue) = each %{$value} ) {
-                if ( $subvalue->{order} ) {
-                    push @lines, set_json( $section, $key, $subkey );
+            foreach my $sub_key (sort keys %{$value} ) {
+                my $sub_value = $value->{$sub_key};
+                my $sub_bits = $sub_value->{bits};
+                if ( $sub_bits ) {
+                    push @lines, set_json( $sub_bits,$section, $key, $sub_key );
                 }
                 else {
-                    print "RECURSE key=$key subkey=$subkey subvalue=".Dumper($subvalue);
+                    print "RECURSE key=$key sub_key=$sub_key subvalue=".Dumper($sub_value);
                 }
             }
         }
@@ -111,8 +127,8 @@ sub render_merge_list_function {
     my @lines        = set_json_section( $data, $section );
     my @loop_lines;
     foreach my $line (@lines) {
-        $line =~ s/$section"]/$section_list"][i]/;
-        $line =~ s/$section\./$section\[i\]./;
+        $line =~ s/$section"]/$section_list"][i]/g;
+        $line =~ s/$section\./$section\[i\]./g;
         push @loop_lines, $line;
     }
     my $label_line = ($section_list=~m/(nation}player|indian)/)?<<ENDTEXT:"";
@@ -221,7 +237,7 @@ ENDTEXT
 exit;
 
 sub set_data {
-    my ( $hash, $bytes, $hints, @id ) = @_;
+    my ( $hash, $bits, $hints, @id ) = @_;
     my $last   = pop @id;
     my $so_far = '';
     foreach my $part (@id) {
@@ -237,7 +253,7 @@ sub set_data {
  #print "Setting $so_far.$last, order=$ORDER bytes=$bytes hints=$hints\n";
     $hash->{$last} = {
         order   => $ORDER,
-        bytes   => $bytes,
+        bits   => $bits,
         hints => $hints,
     };
 }
@@ -253,27 +269,33 @@ sub get_chunk {
     my ($line) = @_;
     my $chunk_match = '(char|u?int\d+_t)';
     my ( $chunk, $name, $suffix, $hints )
-        = ( $line =~ m/$chunk_match\s+([a-z_0-9A-Z]+)\D*(\d+\D*)?;(.*)/ );
-    $suffix =~ s/\D//g if $suffix;
+        = ( $line =~ m/$chunk_match\s+([a-z_0-9A-Z]+)\s*([:\[ \d]+)?\D*?;(.*)/ );
     return ( $chunk, $name, $suffix, $hints );
 }
 
-sub get_bytes {
-    my ( $chunk, $suffix ) = @_;
-    my ($base) = ( $chunk =~ m/(\d+)/ );
-    if ($base) {
-        $base = $base / 8;
-    }
-    else {
-        $base = 1;
-    }
-    $suffix //= 1;
+sub get_bits {
+    my ( $type, $suffix ) = @_;
+    my ($total) = ( $type =~ m/(\d+)/ );
+    $total //= 8; # e.g. char
 
-    #print "base=$base suffix=$suffix\n";
+    my $array_items = 0;
+    if ($suffix) {
+        my ($digits) = ($suffix =~ m/(\d+)/);
+        if ($suffix =~ m/\[/) {
+            $array_items = $digits;
+            $total = $total * $array_items;
+        }
+        elsif ( $suffix =~ m/:/ ){
+            $total = $digits; # bitwise (less than 8)
+        }
+        else {
+            die "Unable to parse suffix=$suffix for type=$type!";
+        }
+    }
     return {
-        total => $base * $suffix,
-        base => $base,
-        suffix => $suffix,
+        type => $type,
+        total => $total,
+        array_items => $array_items,
     };
 }
 
