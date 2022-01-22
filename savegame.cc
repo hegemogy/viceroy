@@ -971,10 +971,16 @@ void print_tribe(const struct savegame::tribe  *tribe,  uint16_t tribe_count, in
 		for (int j = 0; j < sizeof (tribe[i].unk1); ++j)
 			printf("%02x ", tribe[i].unk1[j]);
 
-		printf("panic(%2d) ", tribe[i].panic);
+        int last_trade = tribe[i].last_trade;
+        const char* last_trade_string = last_trade<16? cargo_list[tribe[i].last_trade] : "none"; 
+        printf("last_trade(%s) ", last_trade_string);
 
-		for (int j = 0; j < sizeof (tribe[i].unk2); ++j)
-			printf("%02x ", tribe[i].unk2[j]);
+    	printf("%02x ", tribe[i].unk2);
+		
+        printf("panic(%2d) ", tribe[i].panic);
+
+		for (int j = 0; j < sizeof (tribe[i].unk3); ++j)
+			printf("%02x ", tribe[i].unk3[j]);
 
 		printf("%02x\n", tribe[i].population_loss_in_current_turn);
 

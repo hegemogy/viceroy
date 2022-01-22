@@ -94,22 +94,22 @@ static const char *indian_list[] = {
 };
 
 static const char *cargo_list[] = {
-	"Food",
-	"Sugar",
-	"Tobacco",
-	"Cotton",
-	"Furs",
-	"Lumber",
-	"Ore",
-	"Silver",
-	"Horses",
-	"Rum",
-	"Cigars",
-	"Cloth",
-	"Coats",
-	"Trade goods",
-	"Tools",
-	"Muskets",
+	/*  0 */ "Food",
+	/*  1 */ "Sugar",
+	/*  2 */ "Tobacco",
+	/*  3 */ "Cotton",
+	/*  4 */ "Furs",
+	/*  5 */ "Lumber",
+	/*  6 */ "Ore",
+	/*  7 */ "Silver",
+	/*  8 */ "Horses",
+	/*  9 */ "Rum",
+	/* 10 */ "Cigars",
+	/* 11 */ "Cloth",
+	/* 12 */ "Coats",
+	/* 13 */ "Trade goods",
+	/* 14 */ "Tools",
+	/* 15 */ "Muskets",
 };
 
 static const char *founding_father_list[] = {
@@ -423,9 +423,11 @@ struct savegame {
 		} __attribute__ ((packed)) state;
 		uint8_t population;
 		int8_t mission; //ff if none, 0 1 2 3 = eng fra spa dut
-		uint8_t unk1[4];
+		uint8_t unk1[2];
+		uint8_t last_trade;
+		uint8_t unk2;
 		uint8_t panic;
-		uint8_t unk2[6];
+		uint8_t unk3[6];
 		uint8_t population_loss_in_current_turn; //due to attacks
 	} __attribute__ ((packed)) *tribe;
 
