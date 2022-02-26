@@ -497,6 +497,8 @@ json merge_json_indian_list(   const struct savegame *sg, json j )
 			sg->indian[i].alarm_by_player[3],
 		};
 		j["indian_list"][i]["alarm_by_player"]["value"] = sg_indian_alarm_by_player;
+        j["indian_list"][i]["capitol_x"]["value"] = (uint8_t) sg->indian[i].capitol_x;
+        j["indian_list"][i]["capitol_y"]["value"] = (uint8_t) sg->indian[i].capitol_y;
         uint8_t sg_indian_met_by_player[] = {
 			sg->indian[i].met_by_player[0],
 			sg->indian[i].met_by_player[1],
@@ -504,7 +506,26 @@ json merge_json_indian_list(   const struct savegame *sg, json j )
 			sg->indian[i].met_by_player[3],
 		};
 		j["indian_list"][i]["met_by_player"]["value"] = sg_indian_met_by_player;
-        j["indian_list"][i]["unk0"]["value"] = sg->indian[i].unk0;
+        j["indian_list"][i]["tech"]["value"] = (uint8_t) sg->indian[i].tech;
+        int16_t sg_indian_tons[] = {
+			sg->indian[i].tons[0],
+			sg->indian[i].tons[1],
+			sg->indian[i].tons[2],
+			sg->indian[i].tons[3],
+			sg->indian[i].tons[4],
+			sg->indian[i].tons[5],
+			sg->indian[i].tons[6],
+			sg->indian[i].tons[7],
+			sg->indian[i].tons[8],
+			sg->indian[i].tons[9],
+			sg->indian[i].tons[10],
+			sg->indian[i].tons[11],
+			sg->indian[i].tons[12],
+			sg->indian[i].tons[13],
+			sg->indian[i].tons[14],
+			sg->indian[i].tons[15],
+		};
+		j["indian_list"][i]["tons"]["value"] = sg_indian_tons;
         uint8_t sg_indian_unk1[] = {
 			sg->indian[i].unk1[0],
 			sg->indian[i].unk1[1],
@@ -514,8 +535,37 @@ json merge_json_indian_list(   const struct savegame *sg, json j )
 			sg->indian[i].unk1[5],
 			sg->indian[i].unk1[6],
 			sg->indian[i].unk1[7],
+			sg->indian[i].unk1[8],
+			sg->indian[i].unk1[9],
+			sg->indian[i].unk1[10],
 		};
 		j["indian_list"][i]["unk1"]["value"] = sg_indian_unk1;
+        uint8_t sg_indian_unk2[] = {
+			sg->indian[i].unk2[0],
+			sg->indian[i].unk2[1],
+			sg->indian[i].unk2[2],
+			sg->indian[i].unk2[3],
+			sg->indian[i].unk2[4],
+			sg->indian[i].unk2[5],
+			sg->indian[i].unk2[6],
+			sg->indian[i].unk2[7],
+			sg->indian[i].unk2[8],
+			sg->indian[i].unk2[9],
+			sg->indian[i].unk2[10],
+			sg->indian[i].unk2[11],
+		};
+		j["indian_list"][i]["unk2"]["value"] = sg_indian_unk2;
+        uint8_t sg_indian_unk3[] = {
+			sg->indian[i].unk3[0],
+			sg->indian[i].unk3[1],
+			sg->indian[i].unk3[2],
+			sg->indian[i].unk3[3],
+			sg->indian[i].unk3[4],
+			sg->indian[i].unk3[5],
+			sg->indian[i].unk3[6],
+			sg->indian[i].unk3[7],
+		};
+		j["indian_list"][i]["unk3"]["value"] = sg_indian_unk3;
     }
     return j;
 }
@@ -732,6 +782,7 @@ json merge_json_tribe_list(   const struct savegame *sg, json j )
     for (int i = 0; i < sg->count.tribe; ++i) {
         j["tribe_list"][i] = base;
         
+        j["tribe_list"][i]["last_trade"]["value"] = (uint8_t) sg->tribe[i].last_trade;
         j["tribe_list"][i]["mission"]["value"] = (int8_t) sg->tribe[i].mission;
         j["tribe_list"][i]["nation"]["value"] = (uint8_t) sg->tribe[i].nation;
         j["tribe_list"][i]["panic"]["value"] = (uint8_t) sg->tribe[i].panic;
@@ -748,19 +799,18 @@ json merge_json_tribe_list(   const struct savegame *sg, json j )
         uint8_t sg_tribe_unk1[] = {
 			sg->tribe[i].unk1[0],
 			sg->tribe[i].unk1[1],
-			sg->tribe[i].unk1[2],
-			sg->tribe[i].unk1[3],
 		};
 		j["tribe_list"][i]["unk1"]["value"] = sg_tribe_unk1;
-        uint8_t sg_tribe_unk2[] = {
-			sg->tribe[i].unk2[0],
-			sg->tribe[i].unk2[1],
-			sg->tribe[i].unk2[2],
-			sg->tribe[i].unk2[3],
-			sg->tribe[i].unk2[4],
-			sg->tribe[i].unk2[5],
+        j["tribe_list"][i]["unk2"]["value"] = (uint8_t) sg->tribe[i].unk2;
+        uint8_t sg_tribe_unk3[] = {
+			sg->tribe[i].unk3[0],
+			sg->tribe[i].unk3[1],
+			sg->tribe[i].unk3[2],
+			sg->tribe[i].unk3[3],
+			sg->tribe[i].unk3[4],
+			sg->tribe[i].unk3[5],
 		};
-		j["tribe_list"][i]["unk2"]["value"] = sg_tribe_unk2;
+		j["tribe_list"][i]["unk3"]["value"] = sg_tribe_unk3;
         j["tribe_list"][i]["x"]["value"] = (uint8_t) sg->tribe[i].x;
         j["tribe_list"][i]["y"]["value"] = (uint8_t) sg->tribe[i].y;
     }
@@ -771,68 +821,198 @@ json merge_json_tribe_list(   const struct savegame *sg, json j )
 json json_base() {
     auto j = R"(
 {
-   "player" : {
-      "unk00" : {
+   "count" : {
+      "tribe" : {
          "hints" : "",
-         "order" : 96,
+         "order" : 3,
          "bits" : {
-            "type" : "uint8_t",
-            "total" : "8",
-            "array_items" : 0
+            "array_items" : 0,
+            "type" : "uint16_t",
+            "total" : "16"
          }
       },
-      "diplomacy" : {
-         "order" : 99,
+      "nation" : {
          "bits" : {
-            "total" : "8",
+            "total" : "16",
             "array_items" : 0,
-            "type" : "uint8_t"
+            "type" : "uint16_t"
+         },
+         "order" : 5,
+         "hints" : ""
+      },
+      "indian" : {
+         "order" : 6,
+         "bits" : {
+            "type" : "uint16_t",
+            "array_items" : 0,
+            "total" : "16"
          },
          "hints" : ""
       },
-      "control" : {
+      "colony" : {
          "bits" : {
-            "total" : "8",
+            "total" : "16",
             "array_items" : 0,
-            "type" : "uint8_t"
+            "type" : "uint16_t"
          },
-         "order" : 97,
-         "hints" : " enum { PLAYER = 0, AI = 1 };"
+         "order" : 1,
+         "hints" : ""
       },
-      "name" : {
-         "hints" : "",
-         "order" : 94,
+      "unit" : {
          "bits" : {
-            "type" : "char",
-            "total" : 192,
-            "array_items" : 24
-         }
-      },
-      "founded_colonies" : {
-         "order" : 98,
-         "bits" : {
+            "type" : "uint16_t",
             "array_items" : 0,
-            "total" : "8",
-            "type" : "uint8_t"
+            "total" : "16"
          },
-         "hints" : " // founded colonies, probably used pick next colony name"
+         "order" : 2,
+         "hints" : ""
       },
-      "country" : {
+      "player" : {
          "hints" : "",
          "bits" : {
-            "total" : 192,
+            "total" : "16",
+            "array_items" : 0,
+            "type" : "uint16_t"
+         },
+         "order" : 4
+      }
+   },
+   "other" : {
+      "unkXX_xx" : {
+         "hints" : "",
+         "bits" : {
+            "type" : "uint8_t",
             "array_items" : 24,
-            "type" : "char"
+            "total" : 192
          },
-         "order" : 95
+         "order" : 100
       }
    },
    "tribe" : {
+      "state" : {
+         "learned" : {
+            "order" : 208,
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint8_t",
+               "total" : "1"
+            },
+            "hints" : " //visited and learned skill"
+         },
+         "artillery" : {
+            "hints" : " //artillery has been nearby?",
+            "order" : 207,
+            "bits" : {
+               "total" : "1",
+               "type" : "uint8_t",
+               "array_items" : 0
+            }
+         },
+         "unk5" : {
+            "hints" : "",
+            "order" : 211,
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            }
+         },
+         "capital" : {
+            "order" : 209,
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "hints" : ""
+         },
+         "scouted" : {
+            "hints" : " //visited by scout",
+            "order" : 210,
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint8_t"
+            }
+         },
+         "unk8" : {
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 214,
+            "hints" : ""
+         },
+         "unk7" : {
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 213,
+            "hints" : ""
+         },
+         "unk6" : {
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 212,
+            "hints" : ""
+         }
+      },
+      "nation" : {
+         "hints" : "",
+         "order" : 206,
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint8_t",
+            "total" : "8"
+         }
+      },
+      "unk2" : {
+         "bits" : {
+            "total" : "8",
+            "type" : "uint8_t",
+            "array_items" : 0
+         },
+         "order" : 219,
+         "hints" : ""
+      },
+      "unk3" : {
+         "hints" : "",
+         "bits" : {
+            "total" : 48,
+            "array_items" : 6,
+            "type" : "uint8_t"
+         },
+         "order" : 221
+      },
+      "panic" : {
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 0,
+            "total" : "8"
+         },
+         "order" : 220,
+         "hints" : ""
+      },
+      "population" : {
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint8_t",
+            "total" : "8"
+         },
+         "order" : 215,
+         "hints" : ""
+      },
       "x" : {
          "bits" : {
             "array_items" : 0,
-            "total" : "8",
-            "type" : "uint8_t"
+            "type" : "uint8_t",
+            "total" : "8"
          },
          "order" : 204,
          "hints" : ""
@@ -846,836 +1026,151 @@ json json_base() {
          },
          "order" : 216
       },
-      "panic" : {
-         "hints" : "",
-         "bits" : {
-            "array_items" : 0,
-            "total" : "8",
-            "type" : "uint8_t"
-         },
-         "order" : 218
-      },
-      "unk1" : {
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : 32,
-            "array_items" : 4
-         },
-         "order" : 217,
-         "hints" : ""
-      },
       "population_loss_in_current_turn" : {
          "hints" : " //due to attacks",
          "bits" : {
-            "total" : "8",
             "array_items" : 0,
-            "type" : "uint8_t"
+            "type" : "uint8_t",
+            "total" : "8"
          },
-         "order" : 220
+         "order" : 222
+      },
+      "last_trade" : {
+         "order" : 218,
+         "bits" : {
+            "total" : "8",
+            "type" : "uint8_t",
+            "array_items" : 0
+         },
+         "hints" : ""
       },
       "y" : {
-         "order" : 205,
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : "8",
-            "array_items" : 0
-         },
-         "hints" : ""
-      },
-      "state" : {
-         "unk7" : {
-            "order" : 213,
-            "bits" : {
-               "type" : "uint8_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "hints" : ""
-         },
-         "capital" : {
-            "hints" : "",
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            },
-            "order" : 209
-         },
-         "artillery" : {
-            "order" : 207,
-            "bits" : {
-               "type" : "uint8_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "hints" : " //artillery has been nearby?"
-         },
-         "unk5" : {
-            "order" : 211,
-            "bits" : {
-               "type" : "uint8_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "hints" : ""
-         },
-         "learned" : {
-            "order" : 208,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            },
-            "hints" : " //visited and learned skill"
-         },
-         "unk6" : {
-            "hints" : "",
-            "order" : 212,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            }
-         },
-         "scouted" : {
-            "hints" : " //visited by scout",
-            "bits" : {
-               "type" : "uint8_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "order" : 210
-         },
-         "unk8" : {
-            "hints" : "",
-            "order" : 214,
-            "bits" : {
-               "type" : "uint8_t",
-               "total" : "1",
-               "array_items" : 0
-            }
-         }
-      },
-      "population" : {
          "hints" : "",
-         "order" : 215,
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : "8",
-            "array_items" : 0
-         }
-      },
-      "unk2" : {
-         "order" : 219,
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 6,
-            "total" : 48
-         },
-         "hints" : ""
-      },
-      "nation" : {
-         "order" : 206,
          "bits" : {
             "type" : "uint8_t",
             "array_items" : 0,
             "total" : "8"
          },
-         "hints" : ""
-      }
-   },
-   "colony" : {
-      "custom_house" : {
-         "ore" : {
-            "hints" : "",
-            "order" : 136,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint16_t"
-            }
-         },
-         "cotton" : {
-            "hints" : "",
-            "order" : 133,
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            }
-         },
-         "cloth" : {
-            "order" : 141,
-            "bits" : {
-               "total" : "1",
-               "array_items" : 0,
-               "type" : "uint16_t"
-            },
-            "hints" : ""
-         },
-         "rum" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 139
-         },
-         "muskets" : {
-            "hints" : "",
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint16_t"
-            },
-            "order" : 145
-         },
-         "tools" : {
-            "hints" : "",
-            "order" : 144,
-            "bits" : {
-               "total" : "1",
-               "array_items" : 0,
-               "type" : "uint16_t"
-            }
-         },
-         "silver" : {
-            "hints" : "",
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint16_t"
-            },
-            "order" : 137
-         },
-         "coats" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "order" : 142
-         },
-         "horses" : {
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 138,
-            "hints" : ""
-         },
-         "sugar" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 131
-         },
-         "tobacco" : {
-            "bits" : {
-               "type" : "uint16_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "order" : 132,
-            "hints" : ""
-         },
-         "furs" : {
-            "hints" : "",
-            "order" : 134,
-            "bits" : {
-               "type" : "uint16_t",
-               "array_items" : 0,
-               "total" : "1"
-            }
-         },
-         "cigars" : {
-            "order" : 140,
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "hints" : ""
-         },
-         "trade_goods" : {
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 143,
-            "hints" : ""
-         },
-         "lumber" : {
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 135,
-            "hints" : ""
-         },
-         "food" : {
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint16_t"
-            },
-            "order" : 130,
-            "hints" : ""
+         "order" : 205
+      },
+      "unk1" : {
+         "hints" : "",
+         "order" : 217,
+         "bits" : {
+            "total" : 16,
+            "type" : "uint8_t",
+            "array_items" : 2
          }
-      },
-      "buildings" : {
-         "stables" : {
-            "hints" : "",
-            "order" : 118,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint32_t"
-            }
-         },
-         "blacksmiths_house" : {
-            "hints" : "",
-            "order" : 128,
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "3",
-               "array_items" : 0
-            }
-         },
-         "town_hall" : {
-            "hints" : "",
-            "order" : 115,
-            "bits" : {
-               "type" : "uint32_t",
-               "total" : "3",
-               "array_items" : 0
-            }
-         },
-         "docks" : {
-            "hints" : "",
-            "order" : 114,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "3",
-               "type" : "uint32_t"
-            }
-         },
-         "capitol" : {
-            "hints" : " /* not really in use */",
-            "order" : 124,
-            "bits" : {
-               "type" : "uint32_t",
-               "array_items" : 0,
-               "total" : "2"
-            }
-         },
-         "printing_press" : {
-            "hints" : "",
-            "order" : 120,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "2",
-               "type" : "uint32_t"
-            }
-         },
-         "tobacconists_house" : {
-            "order" : 122,
-            "bits" : {
-               "total" : "3",
-               "array_items" : 0,
-               "type" : "uint32_t"
-            },
-            "hints" : ""
-         },
-         "rum_distillers_house" : {
-            "bits" : {
-               "array_items" : 0,
-               "total" : "3",
-               "type" : "uint32_t"
-            },
-            "order" : 123,
-            "hints" : ""
-         },
-         "stockade" : {
-            "order" : 112,
-            "bits" : {
-               "total" : "3",
-               "array_items" : 0,
-               "type" : "uint32_t"
-            },
-            "hints" : ""
-         },
-         "carpenters_shop" : {
-            "hints" : "",
-            "order" : 126,
-            "bits" : {
-               "type" : "uint16_t",
-               "array_items" : 0,
-               "total" : "2"
-            }
-         },
-         "schoolhouse" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint32_t",
-               "array_items" : 0,
-               "total" : "3"
-            },
-            "order" : 116
-         },
-         "unused" : {
-            "order" : 129,
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "6",
-               "array_items" : 0
-            },
-            "hints" : ""
-         },
-         "fur_traders_house" : {
-            "hints" : "",
-            "order" : 125,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "3",
-               "type" : "uint16_t"
-            }
-         },
-         "church" : {
-            "bits" : {
-               "total" : "2",
-               "array_items" : 0,
-               "type" : "uint16_t"
-            },
-            "order" : 127,
-            "hints" : ""
-         },
-         "warehouse" : {
-            "hints" : "",
-            "bits" : {
-               "total" : "2",
-               "array_items" : 0,
-               "type" : "uint32_t"
-            },
-            "order" : 117
-         },
-         "weavers_house" : {
-            "hints" : "",
-            "bits" : {
-               "total" : "3",
-               "array_items" : 0,
-               "type" : "uint32_t"
-            },
-            "order" : 121
-         },
-         "armory" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint32_t",
-               "total" : "3",
-               "array_items" : 0
-            },
-            "order" : 113
-         },
-         "custom_house" : {
-            "bits" : {
-               "type" : "uint32_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 119,
-            "hints" : ""
-         }
-      },
-      "rebel_dividend" : {
-         "hints" : "",
-         "bits" : {
-            "array_items" : 0,
-            "total" : "32",
-            "type" : "uint32_t"
-         },
-         "order" : 152
-      },
-      "y" : {
-         "hints" : "",
-         "order" : 102,
-         "bits" : {
-            "total" : "8",
-            "array_items" : 0,
-            "type" : "uint8_t"
-         }
-      },
-      "unka" : {
-         "order" : 146,
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : 48,
-            "array_items" : 6
-         },
-         "hints" : ""
-      },
-      "unkd" : {
-         "hints" : "",
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 8,
-            "total" : 64
-         },
-         "order" : 151
-      },
-      "rebel_divisor" : {
-         "bits" : {
-            "array_items" : 0,
-            "total" : "32",
-            "type" : "uint32_t"
-         },
-         "order" : 153,
-         "hints" : ""
-      },
-      "unkb" : {
-         "hints" : "",
-         "order" : 149,
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 5,
-            "total" : 40
-         }
-      },
-      "name" : {
-         "bits" : {
-            "type" : "char",
-            "array_items" : 24,
-            "total" : 192
-         },
-         "order" : 103,
-         "hints" : ""
-      },
-      "x" : {
-         "hints" : "",
-         "bits" : {
-            "total" : "8",
-            "array_items" : 0,
-            "type" : "uint8_t"
-         },
-         "order" : 101
-      },
-      "unk8" : {
-         "hints" : "",
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 12,
-            "total" : 96
-         },
-         "order" : 111
-      },
-      "building_in_production" : {
-         "order" : 148,
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 0,
-            "total" : "8"
-         },
-         "hints" : ""
-      },
-      "unk6" : {
-         "hints" : "",
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : 128,
-            "array_items" : 16
-         },
-         "order" : 109
-      },
-      "nation" : {
-         "order" : 104,
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : "8",
-            "array_items" : 0
-         },
-         "hints" : ""
-      },
-      "stock" : {
-         "hints" : "",
-         "bits" : {
-            "total" : 256,
-            "array_items" : 16,
-            "type" : "uint16_t"
-         },
-         "order" : 150
-      },
-      "occupation" : {
-         "hints" : "",
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 32,
-            "total" : 256
-         },
-         "order" : 107
-      },
-      "unk0" : {
-         "hints" : "",
-         "bits" : {
-            "array_items" : 4,
-            "total" : 32,
-            "type" : "uint8_t"
-         },
-         "order" : 105
-      },
-      "hammers" : {
-         "hints" : "",
-         "order" : 147,
-         "bits" : {
-            "total" : "16",
-            "array_items" : 0,
-            "type" : "uint16_t"
-         }
-      },
-      "profession" : {
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 32,
-            "total" : 256
-         },
-         "order" : 108,
-         "hints" : ""
-      },
-      "population" : {
-         "hints" : "",
-         "bits" : {
-            "array_items" : 0,
-            "total" : "8",
-            "type" : "uint8_t"
-         },
-         "order" : 106
-      },
-      "tiles" : {
-         "hints" : " //represents tiles around the colony. idx to citizen.",
-         "bits" : {
-            "type" : "int8_t",
-            "total" : 64,
-            "array_items" : 8
-         },
-         "order" : 110
-      }
-   },
-   "stuff" : {
-      "viewport_y" : {
-         "bits" : {
-            "total" : "16",
-            "array_items" : 0,
-            "type" : "uint16_t"
-         },
-         "order" : 235,
-         "hints" : ""
-      },
-      "counter_increasing_on_new_colony" : {
-         "hints" : "",
-         "bits" : {
-            "total" : "16",
-            "array_items" : 0,
-            "type" : "uint16_t"
-         },
-         "order" : 228
-      },
-      "unk_short" : {
-         "bits" : {
-            "total" : "16",
-            "array_items" : 0,
-            "type" : "uint16_t"
-         },
-         "order" : 227,
-         "hints" : ""
-      },
-      "x" : {
-         "bits" : {
-            "array_items" : 0,
-            "total" : "16",
-            "type" : "uint16_t"
-         },
-         "order" : 230,
-         "hints" : ""
-      },
-      "unk7" : {
-         "hints" : "",
-         "bits" : {
-            "total" : "8",
-            "array_items" : 0,
-            "type" : "uint8_t"
-         },
-         "order" : 233
-      },
-      "zoom_level" : {
-         "hints" : "",
-         "order" : 232,
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : "8",
-            "array_items" : 0
-         }
-      },
-      "unk_big" : {
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 696,
-            "total" : 5568
-         },
-         "order" : 229,
-         "hints" : ""
-      },
-      "counter_decreasing_on_new_colony" : {
-         "order" : 226,
-         "bits" : {
-            "array_items" : 0,
-            "total" : "16",
-            "type" : "uint16_t"
-         },
-         "hints" : ""
-      },
-      "unk15" : {
-         "order" : 225,
-         "bits" : {
-            "array_items" : 15,
-            "total" : 120,
-            "type" : "uint8_t"
-         },
-         "hints" : ""
-      },
-      "y" : {
-         "hints" : "",
-         "bits" : {
-            "total" : "16",
-            "array_items" : 0,
-            "type" : "uint16_t"
-         },
-         "order" : 231
-      },
-      "viewport_x" : {
-         "order" : 234,
-         "bits" : {
-            "array_items" : 0,
-            "total" : "16",
-            "type" : "uint16_t"
-         },
-         "hints" : ""
       }
    },
    "nation" : {
-      "tax_rate" : {
-         "hints" : "",
-         "order" : 178,
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : "8",
-            "array_items" : 0
-         }
-      },
-      "recruit_count" : {
-         "hints" : " //recruit penalty 120 + (count * 20) (does not go above 180) ",
-         "order" : 181,
-         "bits" : {
-            "total" : "8",
-            "array_items" : 0,
-            "type" : "uint8_t"
-         }
-      },
-      "founding_father_count" : {
-         "hints" : "",
-         "order" : 187,
-         "bits" : {
-            "type" : "uint16_t",
-            "total" : "16",
-            "array_items" : 0
-         }
-      },
-      "unk4" : {
-         "order" : 190,
-         "bits" : {
-            "total" : 40,
-            "array_items" : 5,
-            "type" : "uint8_t"
-         },
-         "hints" : ""
-      },
-      "gold" : {
-         "bits" : {
-            "type" : "uint32_t",
-            "total" : "32",
-            "array_items" : 0
-         },
-         "order" : 194,
-         "hints" : ""
-      },
-      "relation_by_indian" : {
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 8,
-            "total" : 64
-         },
-         "order" : 197,
-         "hints" : " enum { NOT_MET = 0x00, WAR = 0x20, PEACE = 0x60};"
-      },
-      "unk0" : {
-         "hints" : "",
-         "order" : 177,
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : "8",
-            "array_items" : 0
-         }
-      },
-      "villages_burned" : {
-         "hints" : "",
-         "order" : 189,
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 0,
-            "total" : "8"
-         }
-      },
-      "unk6" : {
-         "hints" : "",
-         "bits" : {
-            "type" : "int16_t",
-            "total" : 64,
-            "array_items" : 4
-         },
-         "order" : 196
-      },
-      "recruit" : {
-         "hints" : "",
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : 24,
-            "array_items" : 3
-         },
-         "order" : 179
-      },
-      "unk3" : {
-         "order" : 185,
-         "bits" : {
-            "array_items" : 2,
-            "total" : 16,
-            "type" : "uint8_t"
-         },
-         "hints" : ""
-      },
       "unk7" : {
+         "hints" : "",
          "bits" : {
             "total" : 96,
             "array_items" : 12,
             "type" : "uint8_t"
          },
-         "order" : 198,
+         "order" : 198
+      },
+      "tax_rate" : {
+         "hints" : "",
+         "order" : 178,
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 0,
+            "total" : "8"
+         }
+      },
+      "villages_burned" : {
+         "bits" : {
+            "total" : "8",
+            "type" : "uint8_t",
+            "array_items" : 0
+         },
+         "order" : 189,
          "hints" : ""
+      },
+      "unk1" : {
+         "hints" : "",
+         "order" : 180,
+         "bits" : {
+            "total" : "8",
+            "array_items" : 0,
+            "type" : "uint8_t"
+         }
+      },
+      "gold" : {
+         "hints" : "",
+         "order" : 194,
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint32_t",
+            "total" : "32"
+         }
+      },
+      "artillery_count" : {
+         "hints" : " //artillery purchased in europe. 500 + (count * 100) price penalty.",
+         "order" : 191,
+         "bits" : {
+            "total" : "16",
+            "type" : "uint16_t",
+            "array_items" : 0
+         }
+      },
+      "boycott_bitmap" : {
+         "order" : 192,
+         "bits" : {
+            "total" : "16",
+            "array_items" : 0,
+            "type" : "uint16_t"
+         },
+         "hints" : ""
+      },
+      "unk0" : {
+         "hints" : "",
+         "order" : 177,
+         "bits" : {
+            "total" : "8",
+            "array_items" : 0,
+            "type" : "uint8_t"
+         }
+      },
+      "next_founding_father" : {
+         "hints" : "",
+         "order" : 186,
+         "bits" : {
+            "type" : "int16_t",
+            "array_items" : 0,
+            "total" : "16"
+         }
+      },
+      "recruit" : {
+         "hints" : "",
+         "bits" : {
+            "total" : 24,
+            "array_items" : 3,
+            "type" : "uint8_t"
+         },
+         "order" : 179
+      },
+      "unk4" : {
+         "hints" : "",
+         "order" : 190,
+         "bits" : {
+            "total" : 40,
+            "array_items" : 5,
+            "type" : "uint8_t"
+         }
+      },
+      "liberty_bells_last_turn" : {
+         "hints" : "",
+         "order" : 184,
+         "bits" : {
+            "total" : "16",
+            "type" : "uint16_t",
+            "array_items" : 0
+         }
       },
       "ffc_high" : {
          "hints" : " //suspect founding_father_count is 32bit.",
@@ -1686,1155 +1181,421 @@ json json_base() {
          },
          "order" : 188
       },
-      "trade" : {
-         "tons" : {
-            "hints" : "",
-            "order" : 202,
-            "bits" : {
-               "type" : "int32_t",
-               "total" : 512,
-               "array_items" : 16
-            }
-         },
-         "nr" : {
-            "hints" : "",
-            "order" : 200,
-            "bits" : {
-               "type" : "int16_t",
-               "total" : 256,
-               "array_items" : 16
-            }
-         },
-         "gold" : {
-            "hints" : "",
-            "order" : 201,
-            "bits" : {
-               "type" : "int32_t",
-               "total" : 512,
-               "array_items" : 16
-            }
-         },
-         "tons2" : {
-            "hints" : "",
-            "order" : 203,
-            "bits" : {
-               "array_items" : 16,
-               "total" : 512,
-               "type" : "int32_t"
-            }
-         },
-         "euro_price" : {
-            "order" : 199,
-            "bits" : {
-               "type" : "uint8_t",
-               "array_items" : 16,
-               "total" : 128
-            },
-            "hints" : ""
-         }
-      },
-      "unk2" : {
-         "hints" : "",
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 5,
-            "total" : 40
-         },
-         "order" : 182
-      },
-      "liberty_bells_last_turn" : {
-         "bits" : {
-            "type" : "uint16_t",
-            "array_items" : 0,
-            "total" : "16"
-         },
-         "order" : 184,
-         "hints" : ""
-      },
-      "next_founding_father" : {
-         "bits" : {
-            "array_items" : 0,
-            "total" : "16",
-            "type" : "int16_t"
-         },
-         "order" : 186,
-         "hints" : ""
-      },
-      "artillery_count" : {
-         "bits" : {
-            "type" : "uint16_t",
-            "total" : "16",
-            "array_items" : 0
-         },
-         "order" : 191,
-         "hints" : " //artillery purchased in europe. 500 + (count * 100) price penalty."
-      },
-      "unk1" : {
-         "hints" : "",
-         "order" : 180,
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : "8",
-            "array_items" : 0
-         }
-      },
-      "liberty_bells_total" : {
-         "hints" : "",
-         "bits" : {
-            "total" : "16",
-            "array_items" : 0,
-            "type" : "uint16_t"
-         },
-         "order" : 183
-      },
-      "crosses" : {
-         "order" : 195,
-         "bits" : {
-            "type" : "uint16_t",
-            "total" : "16",
-            "array_items" : 0
-         },
-         "hints" : ""
-      },
-      "boycott_bitmap" : {
-         "hints" : "",
-         "bits" : {
-            "array_items" : 0,
-            "total" : "16",
-            "type" : "uint16_t"
-         },
-         "order" : 192
-      },
-      "unk5" : {
+      "relation_by_indian" : {
+         "hints" : " enum { NOT_MET = 0x00, WAR = 0x20, PEACE = 0x60};",
          "bits" : {
             "type" : "uint8_t",
             "array_items" : 8,
             "total" : 64
          },
-         "order" : 193,
+         "order" : 197
+      },
+      "founding_father_count" : {
+         "bits" : {
+            "type" : "uint16_t",
+            "array_items" : 0,
+            "total" : "16"
+         },
+         "order" : 187,
+         "hints" : ""
+      },
+      "unk3" : {
+         "order" : 185,
+         "bits" : {
+            "total" : 16,
+            "array_items" : 2,
+            "type" : "uint8_t"
+         },
+         "hints" : ""
+      },
+      "unk5" : {
+         "hints" : "",
+         "bits" : {
+            "total" : 64,
+            "array_items" : 8,
+            "type" : "uint8_t"
+         },
+         "order" : 193
+      },
+      "trade" : {
+         "tons2" : {
+            "hints" : "",
+            "order" : 203,
+            "bits" : {
+               "total" : 512,
+               "type" : "int32_t",
+               "array_items" : 16
+            }
+         },
+         "euro_price" : {
+            "hints" : "",
+            "bits" : {
+               "total" : 128,
+               "type" : "uint8_t",
+               "array_items" : 16
+            },
+            "order" : 199
+         },
+         "gold" : {
+            "hints" : "",
+            "bits" : {
+               "array_items" : 16,
+               "type" : "int32_t",
+               "total" : 512
+            },
+            "order" : 201
+         },
+         "nr" : {
+            "hints" : "",
+            "bits" : {
+               "array_items" : 16,
+               "type" : "int16_t",
+               "total" : 256
+            },
+            "order" : 200
+         },
+         "tons" : {
+            "hints" : "",
+            "bits" : {
+               "total" : 512,
+               "array_items" : 16,
+               "type" : "int32_t"
+            },
+            "order" : 202
+         }
+      },
+      "unk2" : {
+         "hints" : "",
+         "bits" : {
+            "total" : 40,
+            "array_items" : 5,
+            "type" : "uint8_t"
+         },
+         "order" : 182
+      },
+      "unk6" : {
+         "bits" : {
+            "array_items" : 4,
+            "type" : "int16_t",
+            "total" : 64
+         },
+         "order" : 196,
+         "hints" : ""
+      },
+      "crosses" : {
+         "bits" : {
+            "type" : "uint16_t",
+            "array_items" : 0,
+            "total" : "16"
+         },
+         "order" : 195,
+         "hints" : ""
+      },
+      "recruit_count" : {
+         "order" : 181,
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 0,
+            "total" : "8"
+         },
+         "hints" : " //recruit penalty 120 + (count * 20) (does not go above 180) "
+      },
+      "liberty_bells_total" : {
+         "hints" : "",
+         "order" : 183,
+         "bits" : {
+            "type" : "uint16_t",
+            "array_items" : 0,
+            "total" : "16"
+         }
+      }
+   },
+   "stuff" : {
+      "y" : {
+         "hints" : "",
+         "order" : 238,
+         "bits" : {
+            "total" : "16",
+            "type" : "uint16_t",
+            "array_items" : 0
+         }
+      },
+      "counter_increasing_on_new_colony" : {
+         "hints" : "",
+         "order" : 235,
+         "bits" : {
+            "type" : "uint16_t",
+            "array_items" : 0,
+            "total" : "16"
+         }
+      },
+      "x" : {
+         "hints" : "",
+         "bits" : {
+            "total" : "16",
+            "type" : "uint16_t",
+            "array_items" : 0
+         },
+         "order" : 237
+      },
+      "unk15" : {
+         "hints" : "",
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 15,
+            "total" : 120
+         },
+         "order" : 232
+      },
+      "zoom_level" : {
+         "order" : 239,
+         "bits" : {
+            "total" : "8",
+            "array_items" : 0,
+            "type" : "uint8_t"
+         },
+         "hints" : ""
+      },
+      "unk_short" : {
+         "hints" : "",
+         "bits" : {
+            "total" : "16",
+            "array_items" : 0,
+            "type" : "uint16_t"
+         },
+         "order" : 234
+      },
+      "viewport_x" : {
+         "bits" : {
+            "type" : "uint16_t",
+            "array_items" : 0,
+            "total" : "16"
+         },
+         "order" : 241,
+         "hints" : ""
+      },
+      "viewport_y" : {
+         "order" : 242,
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint16_t",
+            "total" : "16"
+         },
+         "hints" : ""
+      },
+      "unk7" : {
+         "bits" : {
+            "total" : "8",
+            "type" : "uint8_t",
+            "array_items" : 0
+         },
+         "order" : 240,
+         "hints" : ""
+      },
+      "counter_decreasing_on_new_colony" : {
+         "hints" : "",
+         "order" : 233,
+         "bits" : {
+            "total" : "16",
+            "type" : "uint16_t",
+            "array_items" : 0
+         }
+      },
+      "unk_big" : {
+         "order" : 236,
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 696,
+            "total" : 5568
+         },
          "hints" : ""
       }
    },
-   "other" : {
-      "unkXX_xx" : {
+   "indian" : {
+      "tech" : {
          "bits" : {
             "type" : "uint8_t",
-            "array_items" : 24,
-            "total" : 192
+            "array_items" : 0,
+            "total" : "8"
          },
-         "order" : 100,
+         "order" : 225,
          "hints" : ""
+      },
+      "capitol_y" : {
+         "order" : 224,
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint8_t",
+            "total" : "8"
+         },
+         "hints" : ""
+      },
+      "unk3" : {
+         "hints" : " ",
+         "bits" : {
+            "total" : 64,
+            "type" : "uint8_t",
+            "array_items" : 8
+         },
+         "order" : 230
+      },
+      "unk2" : {
+         "hints" : "",
+         "order" : 228,
+         "bits" : {
+            "total" : 96,
+            "type" : "uint8_t",
+            "array_items" : 12
+         }
+      },
+      "capitol_x" : {
+         "hints" : "",
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint8_t",
+            "total" : "8"
+         },
+         "order" : 223
+      },
+      "alarm_by_player" : {
+         "hints" : "",
+         "order" : 231,
+         "bits" : {
+            "total" : 64,
+            "type" : "uint16_t",
+            "array_items" : 4
+         }
+      },
+      "unk1" : {
+         "bits" : {
+            "array_items" : 11,
+            "type" : "uint8_t",
+            "total" : 88
+         },
+         "order" : 226,
+         "hints" : ""
+      },
+      "tons" : {
+         "hints" : "",
+         "bits" : {
+            "array_items" : 16,
+            "type" : "int16_t",
+            "total" : 256
+         },
+         "order" : 227
+      },
+      "met_by_player" : {
+         "hints" : "",
+         "bits" : {
+            "total" : 32,
+            "type" : "uint8_t",
+            "array_items" : 4
+         },
+         "order" : 229
       }
    },
    "tail" : {
       "unk" : {
-         "order" : 237,
+         "order" : 244,
          "bits" : {
-            "type" : "uint8_t",
             "array_items" : 1502,
+            "type" : "uint8_t",
             "total" : 12016
          },
          "hints" : ""
       }
    },
    "map" : {
-      "order" : 236,
+      "order" : 243,
       "bits" : {
+         "total" : 33408,
          "type" : "uint8_t",
-         "array_items" : 4176,
-         "total" : 33408
+         "array_items" : 4176
       },
       "hints" : "// 56*70 visible + border, = 58*72 = 4176,"
    },
-   "indian" : {
-      "unk0" : {
-         "hints" : "",
-         "order" : 221,
-         "bits" : {
-            "total" : 464,
-            "array_items" : 58,
-            "type" : "uint8_t"
-         }
-      },
-      "met_by_player" : {
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : 32,
-            "array_items" : 4
-         },
-         "order" : 222,
-         "hints" : ""
-      },
-      "alarm_by_player" : {
-         "bits" : {
-            "type" : "uint16_t",
-            "array_items" : 4,
-            "total" : 64
-         },
-         "order" : 224,
-         "hints" : ""
-      },
-      "unk1" : {
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : 64,
-            "array_items" : 8
-         },
-         "order" : 223,
-         "hints" : " "
-      }
-   },
-   "unit" : {
-      "order" : {
-         "order" : 163,
-         "bits" : {
-            "array_items" : 0,
-            "total" : "8",
-            "type" : "uint8_t"
-         },
-         "hints" : " enum { PLOW = 8, ROAD = 9 };"
-      },
-      "unk07" : {
-         "hints" : "",
-         "bits" : {
-            "array_items" : 0,
-            "total" : "8",
-            "type" : "uint8_t"
-         },
-         "order" : 162
-      },
-      "cargo_item_5" : {
-         "order" : 171,
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : "4",
-            "array_items" : 0
-         },
-         "hints" : ""
-      },
-      "cargo_item_0" : {
-         "hints" : "",
-         "order" : 166,
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 0,
-            "total" : "4"
-         }
-      },
-      "unk08" : {
-         "hints" : "",
-         "bits" : {
-            "array_items" : 3,
-            "total" : 24,
-            "type" : "uint8_t"
-         },
-         "order" : 164
-      },
-      "profession" : {
-         "order" : 174,
-         "bits" : {
-            "array_items" : 0,
-            "total" : "8",
-            "type" : "uint8_t"
-         },
-         "hints" : ""
-      },
-      "unk04" : {
-         "hints" : "",
-         "bits" : {
-            "total" : "4",
-            "array_items" : 0,
-            "type" : "uint8_t"
-         },
-         "order" : 158
-      },
-      "cargo_item_1" : {
-         "hints" : "",
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : "4",
-            "array_items" : 0
-         },
-         "order" : 167
-      },
-      "nation" : {
-         "hints" : " /* likely to be owner of unit, eng, fra, spa, dut, indian tribes, etc. */",
-         "order" : 157,
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 0,
-            "total" : "4"
-         }
-      },
-      "transport_chain" : {
-         "prev_unit_idx" : {
-            "hints" : " // index to unit being transported? (treasure) ",
-            "bits" : {
-               "type" : "int16_t",
-               "array_items" : 0,
-               "total" : "16"
-            },
-            "order" : 176
-         },
-         "next_unit_idx" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "int16_t",
-               "total" : "16",
-               "array_items" : 0
-            },
-            "order" : 175
-         }
-      },
-      "unk05" : {
-         "hints" : "",
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 0,
-            "total" : "8"
-         },
-         "order" : 159
-      },
-      "holds_occupied" : {
-         "hints" : "",
-         "order" : 165,
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : "8",
-            "array_items" : 0
-         }
-      },
-      "turns_worked" : {
-         "hints" : "",
-         "order" : 173,
-         "bits" : {
-            "total" : "8",
-            "array_items" : 0,
-            "type" : "uint8_t"
-         }
-      },
-      "cargo_item_4" : {
-         "order" : 170,
-         "bits" : {
-            "array_items" : 0,
-            "total" : "4",
-            "type" : "uint8_t"
-         },
-         "hints" : ""
-      },
-      "x" : {
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : "8",
-            "array_items" : 0
-         },
-         "order" : 154,
-         "hints" : ""
-      },
-      "cargo_item_3" : {
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 0,
-            "total" : "4"
-         },
-         "order" : 169,
-         "hints" : ""
-      },
-      "unk06" : {
-         "order" : 161,
-         "bits" : {
-            "total" : "8",
-            "array_items" : 0,
-            "type" : "uint8_t"
-         },
-         "hints" : ""
-      },
-      "y" : {
-         "hints" : "",
-         "order" : 155,
-         "bits" : {
-            "array_items" : 0,
-            "total" : "8",
-            "type" : "uint8_t"
-         }
-      },
-      "moves" : {
-         "order" : 160,
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 0,
-            "total" : "8"
-         },
-         "hints" : " /* Accumulated moves (3 between land, 1 on roads, etc.) */"
-      },
-      "cargo_hold" : {
-         "order" : 172,
-         "bits" : {
-            "type" : "uint8_t",
-            "total" : 48,
-            "array_items" : 6
-         },
-         "hints" : ""
-      },
-      "cargo_item_2" : {
-         "order" : 168,
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 0,
-            "total" : "4"
-         },
-         "hints" : ""
-      },
-      "type" : {
-         "hints" : "",
-         "order" : 156,
-         "bits" : {
-            "total" : "8",
-            "array_items" : 0,
-            "type" : "uint8_t"
-         }
-      }
-   },
    "head" : {
-      "numbers02" : {
-         "hints" : "",
-         "order" : 63,
-         "bits" : {
-            "total" : 48,
-            "array_items" : 3,
-            "type" : "int16_t"
-         }
-      },
-      "unk1" : {
-         "hints" : "",
-         "order" : 19,
-         "bits" : {
-            "array_items" : 1,
-            "total" : 8,
-            "type" : "uint8_t"
-         }
-      },
-      "numbers01" : {
-         "bits" : {
-            "array_items" : 0,
-            "total" : "16",
-            "type" : "int16_t"
-         },
-         "order" : 61,
-         "hints" : ""
-      },
-      "colony_report_options" : {
-         "report_food_shortages" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "order" : 36
-         },
-         "unused" : {
-            "hints" : "",
-            "order" : 40,
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "6",
-               "array_items" : 0
-            }
-         },
-         "report_when_colonists_trained" : {
-            "hints" : "",
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint16_t"
-            },
-            "order" : 37
-         },
-         "report_new_cargos_available" : {
-            "hints" : "",
-            "order" : 32,
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            }
-         },
-         "report_inefficient_government" : {
-            "bits" : {
-               "type" : "uint16_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "order" : 33,
-            "hints" : ""
-         },
-         "report_rebel_majorities" : {
-            "order" : 39,
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "hints" : ""
-         },
-         "labels_on_cargo_and_terrain" : {
-            "order" : 30,
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "hints" : ""
-         },
-         "labels_on_buildings" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 31
-         },
-         "report_tools_needed_for_production" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 34
-         },
-         "report_raw_materials_shortages" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "order" : 35
-         },
-         "report_sons_of_liberty_membership" : {
-            "hints" : "",
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint16_t"
-            },
-            "order" : 38
-         }
-      },
-      "numbers05" : {
-         "bits" : {
-            "type" : "uint16_t",
-            "total" : 48,
-            "array_items" : 3
-         },
-         "order" : 71,
-         "hints" : ""
-      },
-      "founding_father" : {
-         "hints" : "",
-         "bits" : {
-            "array_items" : 25,
-            "total" : 200,
-            "type" : "int8_t"
-         },
-         "order" : 70
-      },
-      "active_unit" : {
-         "order" : 62,
-         "bits" : {
-            "type" : "uint16_t",
-            "array_items" : 0,
-            "total" : "16"
-         },
-         "hints" : ""
-      },
-      "count_down" : {
-         "order" : 76,
-         "bits" : {
-            "type" : "uint16_t",
-            "total" : 256,
-            "array_items" : 16
-         },
-         "hints" : ""
-      },
-      "autumn" : {
-         "bits" : {
-            "type" : "uint16_t",
-            "total" : "16",
-            "array_items" : 0
-         },
-         "order" : 59,
-         "hints" : " //boolean, true if autumn"
-      },
-      "map_size_y" : {
-         "hints" : "",
-         "order" : 10,
-         "bits" : {
-            "type" : "uint16_t",
-            "total" : "16",
-            "array_items" : 0
-         }
-      },
-      "numbers00" : {
-         "order" : 57,
-         "bits" : {
-            "type" : "int16_t",
-            "array_items" : 0,
-            "total" : "16"
-         },
-         "hints" : ""
-      },
-      "colony_count" : {
-         "hints" : "",
-         "order" : 66,
-         "bits" : {
-            "array_items" : 0,
-            "total" : "16",
-            "type" : "uint16_t"
-         }
-      },
-      "numbers07" : {
-         "hints" : " //backup force, once you produce enough bells.",
-         "bits" : {
-            "type" : "uint16_t",
-            "array_items" : 4,
-            "total" : 64
-         },
-         "order" : 75
-      },
-      "tut3" : {
-         "nr8" : {
-            "bits" : {
-               "type" : "uint8_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 52,
-            "hints" : ""
-         },
-         "nr12" : {
-            "hints" : "",
-            "order" : 56,
-            "bits" : {
-               "total" : "1",
-               "array_items" : 0,
-               "type" : "uint8_t"
-            }
-         },
-         "nr10" : {
-            "order" : 54,
-            "bits" : {
-               "type" : "uint8_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "hints" : ""
-         },
-         "nr7" : {
-            "order" : 51,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            },
-            "hints" : ""
-         },
-         "nr6" : {
-            "hints" : "",
-            "bits" : {
-               "total" : "1",
-               "array_items" : 0,
-               "type" : "uint8_t"
-            },
-            "order" : 50
-         },
-         "nr9" : {
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            },
-            "order" : 53,
-            "hints" : ""
-         },
-         "nr11" : {
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            },
-            "order" : 55,
-            "hints" : ""
-         },
-         "nr5" : {
-            "hints" : "",
-            "order" : 49,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            }
-         }
-      },
-      "unit_count" : {
-         "hints" : "",
-         "order" : 65,
-         "bits" : {
-            "type" : "uint16_t",
-            "array_items" : 0,
-            "total" : "16"
-         }
-      },
-      "nation_relation" : {
-         "hints" : "",
-         "bits" : {
-            "type" : "int16_t",
-            "total" : 64,
-            "array_items" : 4
-         },
-         "order" : 72
-      },
-      "tut1" : {
-         "unk3" : {
-            "hints" : "",
-            "order" : 13,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            }
-         },
-         "nr17" : {
-            "hints" : "",
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            },
-            "order" : 16
-         },
-         "nr14" : {
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            },
-            "order" : 12,
-            "hints" : ""
-         },
-         "nr15" : {
-            "order" : 14,
-            "bits" : {
-               "type" : "uint8_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "hints" : ""
-         },
-         "unk7" : {
-            "hints" : "",
-            "order" : 17,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            }
-         },
-         "nr13" : {
-            "hints" : "",
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            },
-            "order" : 11
-         },
-         "nr16" : {
-            "order" : 15,
-            "bits" : {
-               "type" : "uint8_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "hints" : ""
-         },
-         "nr19" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint8_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 18
-         }
-      },
-      "unkb" : {
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 2,
-            "total" : 16
-         },
-         "order" : 93,
-         "hints" : ""
-      },
-      "numbers04" : {
-         "hints" : "",
-         "bits" : {
-            "array_items" : 0,
-            "total" : "16",
-            "type" : "int16_t"
-         },
-         "order" : 69
-      },
-      "year" : {
-         "order" : 58,
-         "bits" : {
-            "total" : "16",
-            "array_items" : 0,
-            "type" : "uint16_t"
-         },
-         "hints" : ""
-      },
-      "turn" : {
-         "hints" : "",
-         "bits" : {
-            "total" : "16",
-            "array_items" : 0,
-            "type" : "uint16_t"
-         },
-         "order" : 60
-      },
-      "tribe_count" : {
-         "hints" : "",
-         "bits" : {
-            "type" : "uint16_t",
-            "array_items" : 0,
-            "total" : "16"
-         },
-         "order" : 64
-      },
-      "difficulty" : {
-         "bits" : {
-            "type" : "uint8_t",
-            "array_items" : 0,
-            "total" : "8"
-         },
-         "order" : 68,
-         "hints" : " enum { DISCOVERER = 0, EXPLORER = 1, CONQUISTADOR = 2, GOVERNOR = 3, VICEROY = 4 }; //36"
-      },
-      "expeditionary_force" : {
-         "bits" : {
-            "array_items" : 4,
-            "total" : 64,
-            "type" : "uint16_t"
-         },
-         "order" : 74,
-         "hints" : ""
-      },
-      "map_size_x" : {
-         "hints" : "",
-         "bits" : {
-            "array_items" : 0,
-            "total" : "16",
-            "type" : "uint16_t"
-         },
-         "order" : 9
-      },
-      "tut2" : {
-         "nr1" : {
-            "order" : 45,
-            "bits" : {
-               "type" : "uint8_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "hints" : " // shown immediately on game-start"
-         },
-         "nr3" : {
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint8_t"
-            },
-            "order" : 47,
-            "hints" : ""
-         },
-         "event_music" : {
-            "hints" : "",
-            "order" : 43,
-            "bits" : {
-               "total" : "1",
-               "array_items" : 0,
-               "type" : "uint8_t"
-            }
-         },
-         "sound_effects" : {
-            "hints" : "",
-            "order" : 44,
-            "bits" : {
-               "total" : "1",
-               "array_items" : 0,
-               "type" : "uint8_t"
-            }
-         },
-         "background_music" : {
-            "bits" : {
-               "type" : "uint8_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 42,
-            "hints" : ""
-         },
-         "nr2" : {
-            "hints" : " // probably not used, also triggers event_discovery_of_the_new_world",
-            "bits" : {
-               "type" : "uint8_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 46
-         },
-         "nr4" : {
-            "bits" : {
-               "type" : "uint8_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 48,
-            "hints" : ""
-         },
-         "howtowin" : {
-            "hints" : "",
-            "order" : 41,
-            "bits" : {
-               "type" : "uint8_t",
-               "array_items" : 0,
-               "total" : "1"
-            }
-         }
-      },
-      "numbers03" : {
-         "hints" : "",
-         "bits" : {
-            "total" : 48,
-            "array_items" : 3,
-            "type" : "int16_t"
-         },
-         "order" : 67
-      },
-      "numbers06" : {
-         "order" : 73,
-         "bits" : {
-            "type" : "int16_t",
-            "total" : 80,
-            "array_items" : 5
-         },
-         "hints" : ""
-      },
-      "game_options" : {
-         "unknown7" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "7",
-               "array_items" : 0
-            },
-            "order" : 20
-         },
-         "show_foreign_moves" : {
-            "bits" : {
-               "total" : "1",
-               "array_items" : 0,
-               "type" : "uint16_t"
-            },
-            "order" : 28,
-            "hints" : ""
-         },
-         "show_indian_moves" : {
-            "hints" : "",
-            "order" : 29,
-            "bits" : {
-               "total" : "1",
-               "array_items" : 0,
-               "type" : "uint16_t"
-            }
-         },
-         "autosave" : {
-            "order" : 24,
-            "bits" : {
-               "type" : "uint16_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "hints" : ""
-         },
-         "water_color_cycling" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "order" : 22
-         },
-         "tutorial_hints" : {
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 21,
-            "hints" : ""
-         },
-         "end_of_turn" : {
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 25,
-            "hints" : ""
-         },
-         "fast_piece_slide" : {
-            "order" : 26,
-            "bits" : {
-               "total" : "1",
-               "array_items" : 0,
-               "type" : "uint16_t"
-            },
-            "hints" : ""
-         },
-         "unknown" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 27
-         },
-         "combat_analysis" : {
-            "order" : 23,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint16_t"
-            },
-            "hints" : ""
-         }
-      },
       "event" : {
+         "meeting_fellow_europeans" : {
+            "hints" : "",
+            "order" : 86,
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            }
+         },
          "entering_indian_village" : {
             "hints" : "",
             "order" : 83,
             "bits" : {
-               "type" : "uint16_t",
                "total" : "1",
-               "array_items" : 0
+               "array_items" : 0,
+               "type" : "uint16_t"
             }
          },
-         "the_aztec_empire" : {
+         "discovery_of_the_new_world" : {
             "hints" : "",
+            "bits" : {
+               "total" : "1",
+               "type" : "uint16_t",
+               "array_items" : 0
+            },
+            "order" : 77
+         },
+         "woodcut15" : {
+            "hints" : "",
+            "order" : 91,
             "bits" : {
                "type" : "uint16_t",
                "array_items" : 0,
                "total" : "1"
-            },
-            "order" : 80
+            }
          },
-         "woodcut15" : {
-            "order" : 91,
+         "the_inca_nation" : {
             "bits" : {
+               "array_items" : 0,
                "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
+               "total" : "1"
             },
+            "order" : 81,
             "hints" : ""
          },
          "building_a_colony" : {
             "hints" : "",
-            "order" : 78,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint16_t"
-            }
-         },
-         "woodcut14" : {
-            "hints" : "",
             "bits" : {
                "type" : "uint16_t",
                "array_items" : 0,
                "total" : "1"
+            },
+            "order" : 78
+         },
+         "woodcut14" : {
+            "hints" : "",
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint16_t"
             },
             "order" : 90
          },
          "the_fountain_of_youth" : {
             "order" : 84,
             "bits" : {
-               "array_items" : 0,
                "total" : "1",
+               "array_items" : 0,
                "type" : "uint16_t"
             },
             "hints" : ""
          },
-         "the_inca_nation" : {
-            "order" : 81,
+         "colony_burning" : {
             "bits" : {
                "type" : "uint16_t",
                "array_items" : 0,
                "total" : "1"
             },
+            "order" : 87,
             "hints" : ""
-         },
-         "colony_destroyed" : {
-            "order" : 88,
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "hints" : ""
-         },
-         "discovery_of_the_pacific_ocean" : {
-            "bits" : {
-               "total" : "1",
-               "array_items" : 0,
-               "type" : "uint16_t"
-            },
-            "order" : 82,
-            "hints" : ""
-         },
-         "cargo_from_the_new_world" : {
-            "hints" : "",
-            "order" : 85,
-            "bits" : {
-               "array_items" : 0,
-               "total" : "1",
-               "type" : "uint16_t"
-            }
-         },
-         "meeting_the_natives" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "array_items" : 0,
-               "total" : "1"
-            },
-            "order" : 79
-         },
-         "meeting_fellow_europeans" : {
-            "hints" : "",
-            "bits" : {
-               "type" : "uint16_t",
-               "total" : "1",
-               "array_items" : 0
-            },
-            "order" : 86
          },
          "indian_raid" : {
             "order" : 89,
@@ -2845,106 +1606,1458 @@ json json_base() {
             },
             "hints" : ""
          },
-         "colony_burning" : {
+         "the_aztec_empire" : {
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            },
+            "order" : 80,
+            "hints" : ""
+         },
+         "discovery_of_the_pacific_ocean" : {
+            "hints" : "",
             "bits" : {
                "total" : "1",
                "array_items" : 0,
                "type" : "uint16_t"
             },
-            "order" : 87,
-            "hints" : ""
+            "order" : 82
+         },
+         "cargo_from_the_new_world" : {
+            "hints" : "",
+            "order" : 85,
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            }
          },
          "woodcut16" : {
             "bits" : {
                "total" : "1",
-               "array_items" : 0,
-               "type" : "uint16_t"
+               "type" : "uint16_t",
+               "array_items" : 0
             },
             "order" : 92,
             "hints" : ""
          },
-         "discovery_of_the_new_world" : {
+         "meeting_the_natives" : {
             "hints" : "",
             "bits" : {
-               "type" : "uint16_t",
                "total" : "1",
+               "type" : "uint16_t",
                "array_items" : 0
             },
-            "order" : 77
+            "order" : 79
+         },
+         "colony_destroyed" : {
+            "bits" : {
+               "total" : "1",
+               "type" : "uint16_t",
+               "array_items" : 0
+            },
+            "order" : 88,
+            "hints" : ""
          }
       },
-      "sig_colonize" : {
+      "numbers00" : {
          "hints" : "",
-         "order" : 7,
+         "order" : 57,
          "bits" : {
-            "type" : "char",
-            "total" : 72,
-            "array_items" : 9
+            "total" : "16",
+            "type" : "int16_t",
+            "array_items" : 0
+         }
+      },
+      "tribe_count" : {
+         "hints" : "",
+         "order" : 64,
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint16_t",
+            "total" : "16"
+         }
+      },
+      "map_size_x" : {
+         "hints" : "",
+         "bits" : {
+            "total" : "16",
+            "type" : "uint16_t",
+            "array_items" : 0
+         },
+         "order" : 9
+      },
+      "numbers03" : {
+         "bits" : {
+            "array_items" : 3,
+            "type" : "int16_t",
+            "total" : 48
+         },
+         "order" : 67,
+         "hints" : ""
+      },
+      "numbers01" : {
+         "order" : 61,
+         "bits" : {
+            "total" : "16",
+            "type" : "int16_t",
+            "array_items" : 0
+         },
+         "hints" : ""
+      },
+      "tut2" : {
+         "sound_effects" : {
+            "hints" : "",
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint8_t",
+               "total" : "1"
+            },
+            "order" : 44
+         },
+         "nr1" : {
+            "hints" : " // shown immediately on game-start",
+            "order" : 45,
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            }
+         },
+         "howtowin" : {
+            "hints" : "",
+            "order" : 41,
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint8_t",
+               "total" : "1"
+            }
+         },
+         "background_music" : {
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint8_t"
+            },
+            "order" : 42,
+            "hints" : ""
+         },
+         "nr2" : {
+            "hints" : " // probably not used, also triggers event_discovery_of_the_new_world",
+            "order" : 46,
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint8_t"
+            }
+         },
+         "nr4" : {
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint8_t",
+               "total" : "1"
+            },
+            "order" : 48,
+            "hints" : ""
+         },
+         "event_music" : {
+            "hints" : "",
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint8_t"
+            },
+            "order" : 43
+         },
+         "nr3" : {
+            "hints" : "",
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint8_t",
+               "total" : "1"
+            },
+            "order" : 47
+         }
+      },
+      "turn" : {
+         "hints" : "",
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint16_t",
+            "total" : "16"
+         },
+         "order" : 60
+      },
+      "founding_father" : {
+         "hints" : "",
+         "bits" : {
+            "type" : "int8_t",
+            "array_items" : 25,
+            "total" : 200
+         },
+         "order" : 70
+      },
+      "unit_count" : {
+         "hints" : "",
+         "order" : 65,
+         "bits" : {
+            "total" : "16",
+            "type" : "uint16_t",
+            "array_items" : 0
+         }
+      },
+      "unkb" : {
+         "bits" : {
+            "total" : 16,
+            "type" : "uint8_t",
+            "array_items" : 2
+         },
+         "order" : 93,
+         "hints" : ""
+      },
+      "tut3" : {
+         "nr10" : {
+            "hints" : "",
+            "order" : 54,
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            }
+         },
+         "nr6" : {
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 50,
+            "hints" : ""
+         },
+         "nr11" : {
+            "hints" : "",
+            "order" : 55,
+            "bits" : {
+               "total" : "1",
+               "type" : "uint8_t",
+               "array_items" : 0
+            }
+         },
+         "nr12" : {
+            "hints" : "",
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint8_t",
+               "total" : "1"
+            },
+            "order" : 56
+         },
+         "nr8" : {
+            "bits" : {
+               "total" : "1",
+               "type" : "uint8_t",
+               "array_items" : 0
+            },
+            "order" : 52,
+            "hints" : ""
+         },
+         "nr5" : {
+            "hints" : "",
+            "order" : 49,
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint8_t",
+               "total" : "1"
+            }
+         },
+         "nr7" : {
+            "bits" : {
+               "total" : "1",
+               "type" : "uint8_t",
+               "array_items" : 0
+            },
+            "order" : 51,
+            "hints" : ""
+         },
+         "nr9" : {
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint8_t"
+            },
+            "order" : 53,
+            "hints" : ""
+         }
+      },
+      "numbers02" : {
+         "order" : 63,
+         "bits" : {
+            "type" : "int16_t",
+            "array_items" : 3,
+            "total" : 48
+         },
+         "hints" : ""
+      },
+      "numbers04" : {
+         "bits" : {
+            "type" : "int16_t",
+            "array_items" : 0,
+            "total" : "16"
+         },
+         "order" : 69,
+         "hints" : ""
+      },
+      "numbers07" : {
+         "hints" : " //backup force, once you produce enough bells.",
+         "bits" : {
+            "total" : 64,
+            "array_items" : 4,
+            "type" : "uint16_t"
+         },
+         "order" : 75
+      },
+      "unk1" : {
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 1,
+            "total" : 8
+         },
+         "order" : 19,
+         "hints" : ""
+      },
+      "numbers05" : {
+         "bits" : {
+            "type" : "uint16_t",
+            "array_items" : 3,
+            "total" : 48
+         },
+         "order" : 71,
+         "hints" : ""
+      },
+      "map_size_y" : {
+         "order" : 10,
+         "bits" : {
+            "total" : "16",
+            "array_items" : 0,
+            "type" : "uint16_t"
+         },
+         "hints" : ""
+      },
+      "expeditionary_force" : {
+         "order" : 74,
+         "bits" : {
+            "type" : "uint16_t",
+            "array_items" : 4,
+            "total" : 64
+         },
+         "hints" : ""
+      },
+      "nation_relation" : {
+         "hints" : "",
+         "order" : 72,
+         "bits" : {
+            "total" : 64,
+            "array_items" : 4,
+            "type" : "int16_t"
          }
       },
       "unk0" : {
+         "hints" : "",
          "bits" : {
-            "type" : "uint8_t",
             "total" : 24,
-            "array_items" : 3
+            "array_items" : 3,
+            "type" : "uint8_t"
          },
-         "order" : 8,
+         "order" : 8
+      },
+      "year" : {
+         "hints" : "",
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint16_t",
+            "total" : "16"
+         },
+         "order" : 58
+      },
+      "numbers06" : {
+         "hints" : "",
+         "order" : 73,
+         "bits" : {
+            "array_items" : 5,
+            "type" : "int16_t",
+            "total" : 80
+         }
+      },
+      "active_unit" : {
+         "hints" : "",
+         "order" : 62,
+         "bits" : {
+            "type" : "uint16_t",
+            "array_items" : 0,
+            "total" : "16"
+         }
+      },
+      "tut1" : {
+         "unk7" : {
+            "bits" : {
+               "total" : "1",
+               "type" : "uint8_t",
+               "array_items" : 0
+            },
+            "order" : 17,
+            "hints" : ""
+         },
+         "nr19" : {
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint8_t",
+               "total" : "1"
+            },
+            "order" : 18,
+            "hints" : ""
+         },
+         "unk3" : {
+            "hints" : "",
+            "bits" : {
+               "total" : "1",
+               "type" : "uint8_t",
+               "array_items" : 0
+            },
+            "order" : 13
+         },
+         "nr14" : {
+            "hints" : "",
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 12
+         },
+         "nr13" : {
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 11,
+            "hints" : ""
+         },
+         "nr15" : {
+            "hints" : "",
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 14
+         },
+         "nr17" : {
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint8_t"
+            },
+            "order" : 16,
+            "hints" : ""
+         },
+         "nr16" : {
+            "bits" : {
+               "type" : "uint8_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 15,
+            "hints" : ""
+         }
+      },
+      "game_options" : {
+         "autosave" : {
+            "order" : 24,
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            },
+            "hints" : ""
+         },
+         "combat_analysis" : {
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 23,
+            "hints" : ""
+         },
+         "show_indian_moves" : {
+            "bits" : {
+               "total" : "1",
+               "type" : "uint16_t",
+               "array_items" : 0
+            },
+            "order" : 29,
+            "hints" : ""
+         },
+         "fast_piece_slide" : {
+            "hints" : "",
+            "order" : 26,
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            }
+         },
+         "water_color_cycling" : {
+            "hints" : "",
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 22
+         },
+         "end_of_turn" : {
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint16_t"
+            },
+            "order" : 25,
+            "hints" : ""
+         },
+         "show_foreign_moves" : {
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            },
+            "order" : 28,
+            "hints" : ""
+         },
+         "unknown" : {
+            "bits" : {
+               "total" : "1",
+               "type" : "uint16_t",
+               "array_items" : 0
+            },
+            "order" : 27,
+            "hints" : ""
+         },
+         "unknown7" : {
+            "hints" : "",
+            "bits" : {
+               "total" : "7",
+               "type" : "uint16_t",
+               "array_items" : 0
+            },
+            "order" : 20
+         },
+         "tutorial_hints" : {
+            "hints" : "",
+            "order" : 21,
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint16_t"
+            }
+         }
+      },
+      "colony_report_options" : {
+         "report_new_cargos_available" : {
+            "order" : 32,
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint16_t"
+            },
+            "hints" : ""
+         },
+         "report_inefficient_government" : {
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint16_t"
+            },
+            "order" : 33,
+            "hints" : ""
+         },
+         "labels_on_cargo_and_terrain" : {
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            },
+            "order" : 30,
+            "hints" : ""
+         },
+         "report_food_shortages" : {
+            "order" : 36,
+            "bits" : {
+               "total" : "1",
+               "type" : "uint16_t",
+               "array_items" : 0
+            },
+            "hints" : ""
+         },
+         "report_rebel_majorities" : {
+            "hints" : "",
+            "order" : 39,
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            }
+         },
+         "report_when_colonists_trained" : {
+            "hints" : "",
+            "order" : 37,
+            "bits" : {
+               "total" : "1",
+               "type" : "uint16_t",
+               "array_items" : 0
+            }
+         },
+         "labels_on_buildings" : {
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            },
+            "order" : 31,
+            "hints" : ""
+         },
+         "unused" : {
+            "bits" : {
+               "total" : "6",
+               "type" : "uint16_t",
+               "array_items" : 0
+            },
+            "order" : 40,
+            "hints" : ""
+         },
+         "report_tools_needed_for_production" : {
+            "hints" : "",
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint16_t"
+            },
+            "order" : 34
+         },
+         "report_raw_materials_shortages" : {
+            "hints" : "",
+            "order" : 35,
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            }
+         },
+         "report_sons_of_liberty_membership" : {
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            },
+            "order" : 38,
+            "hints" : ""
+         }
+      },
+      "autumn" : {
+         "hints" : " //boolean, true if autumn",
+         "order" : 59,
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint16_t",
+            "total" : "16"
+         }
+      },
+      "sig_colonize" : {
+         "bits" : {
+            "array_items" : 9,
+            "type" : "char",
+            "total" : 72
+         },
+         "order" : 7,
+         "hints" : ""
+      },
+      "colony_count" : {
+         "hints" : "",
+         "order" : 66,
+         "bits" : {
+            "type" : "uint16_t",
+            "array_items" : 0,
+            "total" : "16"
+         }
+      },
+      "difficulty" : {
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint8_t",
+            "total" : "8"
+         },
+         "order" : 68,
+         "hints" : " enum { DISCOVERER = 0, EXPLORER = 1, CONQUISTADOR = 2, GOVERNOR = 3, VICEROY = 4 }; //36"
+      },
+      "count_down" : {
+         "bits" : {
+            "type" : "uint16_t",
+            "array_items" : 16,
+            "total" : 256
+         },
+         "order" : 76,
          "hints" : ""
       }
    },
-   "count" : {
-      "nation" : {
+   "player" : {
+      "name" : {
          "hints" : "",
-         "order" : 5,
+         "order" : 94,
          "bits" : {
-            "type" : "uint16_t",
-            "total" : "16",
+            "type" : "char",
+            "array_items" : 24,
+            "total" : 192
+         }
+      },
+      "unk00" : {
+         "hints" : "",
+         "bits" : {
+            "total" : "8",
+            "array_items" : 0,
+            "type" : "uint8_t"
+         },
+         "order" : 96
+      },
+      "founded_colonies" : {
+         "bits" : {
+            "total" : "8",
+            "array_items" : 0,
+            "type" : "uint8_t"
+         },
+         "order" : 98,
+         "hints" : " // founded colonies, probably used pick next colony name"
+      },
+      "diplomacy" : {
+         "order" : 99,
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 0,
+            "total" : "8"
+         },
+         "hints" : ""
+      },
+      "country" : {
+         "hints" : "",
+         "order" : 95,
+         "bits" : {
+            "array_items" : 24,
+            "type" : "char",
+            "total" : 192
+         }
+      },
+      "control" : {
+         "order" : 97,
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 0,
+            "total" : "8"
+         },
+         "hints" : " enum { PLAYER = 0, AI = 1 };"
+      }
+   },
+   "unit" : {
+      "unk07" : {
+         "order" : 162,
+         "bits" : {
+            "total" : "8",
+            "array_items" : 0,
+            "type" : "uint8_t"
+         },
+         "hints" : ""
+      },
+      "unk08" : {
+         "bits" : {
+            "total" : 24,
+            "type" : "uint8_t",
+            "array_items" : 3
+         },
+         "order" : 164,
+         "hints" : ""
+      },
+      "transport_chain" : {
+         "next_unit_idx" : {
+            "hints" : "",
+            "bits" : {
+               "type" : "int16_t",
+               "array_items" : 0,
+               "total" : "16"
+            },
+            "order" : 175
+         },
+         "prev_unit_idx" : {
+            "order" : 176,
+            "bits" : {
+               "total" : "16",
+               "type" : "int16_t",
+               "array_items" : 0
+            },
+            "hints" : " // index to unit being transported? (treasure) "
+         }
+      },
+      "cargo_item_3" : {
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint8_t",
+            "total" : "4"
+         },
+         "order" : 169,
+         "hints" : ""
+      },
+      "cargo_item_0" : {
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint8_t",
+            "total" : "4"
+         },
+         "order" : 166,
+         "hints" : ""
+      },
+      "y" : {
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 0,
+            "total" : "8"
+         },
+         "order" : 155,
+         "hints" : ""
+      },
+      "turns_worked" : {
+         "order" : 173,
+         "bits" : {
+            "total" : "8",
+            "type" : "uint8_t",
+            "array_items" : 0
+         },
+         "hints" : ""
+      },
+      "order" : {
+         "hints" : " enum { PLOW = 8, ROAD = 9 };",
+         "bits" : {
+            "total" : "8",
+            "array_items" : 0,
+            "type" : "uint8_t"
+         },
+         "order" : 163
+      },
+      "cargo_item_2" : {
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint8_t",
+            "total" : "4"
+         },
+         "order" : 168,
+         "hints" : ""
+      },
+      "cargo_item_4" : {
+         "bits" : {
+            "total" : "4",
+            "type" : "uint8_t",
+            "array_items" : 0
+         },
+         "order" : 170,
+         "hints" : ""
+      },
+      "profession" : {
+         "hints" : "",
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 0,
+            "total" : "8"
+         },
+         "order" : 174
+      },
+      "type" : {
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint8_t",
+            "total" : "8"
+         },
+         "order" : 156,
+         "hints" : ""
+      },
+      "holds_occupied" : {
+         "hints" : "",
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 0,
+            "total" : "8"
+         },
+         "order" : 165
+      },
+      "cargo_hold" : {
+         "hints" : "",
+         "order" : 172,
+         "bits" : {
+            "total" : 48,
+            "array_items" : 6,
+            "type" : "uint8_t"
+         }
+      },
+      "nation" : {
+         "hints" : " /* likely to be owner of unit, eng, fra, spa, dut, indian tribes, etc. */",
+         "order" : 157,
+         "bits" : {
+            "total" : "4",
+            "type" : "uint8_t",
             "array_items" : 0
          }
       },
-      "unit" : {
+      "cargo_item_1" : {
+         "hints" : "",
+         "order" : 167,
+         "bits" : {
+            "total" : "4",
+            "array_items" : 0,
+            "type" : "uint8_t"
+         }
+      },
+      "cargo_item_5" : {
+         "hints" : "",
+         "order" : 171,
          "bits" : {
             "array_items" : 0,
-            "total" : "16",
-            "type" : "uint16_t"
+            "type" : "uint8_t",
+            "total" : "4"
+         }
+      },
+      "unk05" : {
+         "order" : 159,
+         "bits" : {
+            "total" : "8",
+            "array_items" : 0,
+            "type" : "uint8_t"
          },
-         "order" : 2,
          "hints" : ""
       },
-      "indian" : {
+      "unk04" : {
+         "bits" : {
+            "total" : "4",
+            "type" : "uint8_t",
+            "array_items" : 0
+         },
+         "order" : 158,
+         "hints" : ""
+      },
+      "unk06" : {
          "hints" : "",
          "bits" : {
-            "array_items" : 0,
-            "total" : "16",
-            "type" : "uint16_t"
-         },
-         "order" : 6
-      },
-      "colony" : {
-         "order" : 1,
-         "bits" : {
-            "type" : "uint16_t",
-            "total" : "16",
+            "total" : "8",
+            "type" : "uint8_t",
             "array_items" : 0
+         },
+         "order" : 161
+      },
+      "moves" : {
+         "order" : 160,
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint8_t",
+            "total" : "8"
+         },
+         "hints" : " /* Accumulated moves (3 between land, 1 on roads, etc.) */"
+      },
+      "x" : {
+         "hints" : "",
+         "order" : 154,
+         "bits" : {
+            "total" : "8",
+            "array_items" : 0,
+            "type" : "uint8_t"
+         }
+      }
+   },
+   "colony" : {
+      "unk8" : {
+         "bits" : {
+            "total" : 96,
+            "array_items" : 12,
+            "type" : "uint8_t"
+         },
+         "order" : 111,
+         "hints" : ""
+      },
+      "unkb" : {
+         "order" : 149,
+         "bits" : {
+            "array_items" : 5,
+            "type" : "uint8_t",
+            "total" : 40
          },
          "hints" : ""
       },
-      "tribe" : {
+      "tiles" : {
+         "order" : 110,
+         "bits" : {
+            "array_items" : 8,
+            "type" : "int8_t",
+            "total" : 64
+         },
+         "hints" : " //represents tiles around the colony. idx to citizen."
+      },
+      "name" : {
          "hints" : "",
+         "order" : 103,
+         "bits" : {
+            "total" : 192,
+            "type" : "char",
+            "array_items" : 24
+         }
+      },
+      "building_in_production" : {
+         "hints" : "",
+         "bits" : {
+            "array_items" : 0,
+            "type" : "uint8_t",
+            "total" : "8"
+         },
+         "order" : 148
+      },
+      "buildings" : {
+         "custom_house" : {
+            "bits" : {
+               "total" : "1",
+               "type" : "uint32_t",
+               "array_items" : 0
+            },
+            "order" : 119,
+            "hints" : ""
+         },
+         "stables" : {
+            "hints" : "",
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint32_t"
+            },
+            "order" : 118
+         },
+         "town_hall" : {
+            "hints" : "",
+            "bits" : {
+               "total" : "3",
+               "array_items" : 0,
+               "type" : "uint32_t"
+            },
+            "order" : 115
+         },
+         "armory" : {
+            "order" : 113,
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint32_t",
+               "total" : "3"
+            },
+            "hints" : ""
+         },
+         "printing_press" : {
+            "bits" : {
+               "type" : "uint32_t",
+               "array_items" : 0,
+               "total" : "2"
+            },
+            "order" : 120,
+            "hints" : ""
+         },
+         "church" : {
+            "hints" : "",
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "2"
+            },
+            "order" : 127
+         },
+         "docks" : {
+            "order" : 114,
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint32_t",
+               "total" : "3"
+            },
+            "hints" : ""
+         },
+         "tobacconists_house" : {
+            "order" : 122,
+            "bits" : {
+               "total" : "3",
+               "array_items" : 0,
+               "type" : "uint32_t"
+            },
+            "hints" : ""
+         },
+         "blacksmiths_house" : {
+            "hints" : "",
+            "order" : 128,
+            "bits" : {
+               "total" : "3",
+               "type" : "uint16_t",
+               "array_items" : 0
+            }
+         },
+         "warehouse" : {
+            "hints" : "",
+            "bits" : {
+               "total" : "2",
+               "type" : "uint32_t",
+               "array_items" : 0
+            },
+            "order" : 117
+         },
+         "weavers_house" : {
+            "order" : 121,
+            "bits" : {
+               "total" : "3",
+               "type" : "uint32_t",
+               "array_items" : 0
+            },
+            "hints" : ""
+         },
+         "rum_distillers_house" : {
+            "bits" : {
+               "total" : "3",
+               "type" : "uint32_t",
+               "array_items" : 0
+            },
+            "order" : 123,
+            "hints" : ""
+         },
+         "unused" : {
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "6"
+            },
+            "order" : 129,
+            "hints" : ""
+         },
+         "schoolhouse" : {
+            "order" : 116,
+            "bits" : {
+               "type" : "uint32_t",
+               "array_items" : 0,
+               "total" : "3"
+            },
+            "hints" : ""
+         },
+         "carpenters_shop" : {
+            "bits" : {
+               "total" : "2",
+               "array_items" : 0,
+               "type" : "uint16_t"
+            },
+            "order" : 126,
+            "hints" : ""
+         },
+         "capitol" : {
+            "hints" : " /* not really in use */",
+            "order" : 124,
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint32_t",
+               "total" : "2"
+            }
+         },
+         "stockade" : {
+            "hints" : "",
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint32_t",
+               "total" : "3"
+            },
+            "order" : 112
+         },
+         "fur_traders_house" : {
+            "order" : 125,
+            "bits" : {
+               "total" : "3",
+               "type" : "uint16_t",
+               "array_items" : 0
+            },
+            "hints" : ""
+         }
+      },
+      "hammers" : {
+         "order" : 147,
          "bits" : {
             "type" : "uint16_t",
-            "total" : "16",
-            "array_items" : 0
-         },
-         "order" : 3
-      },
-      "player" : {
-         "hints" : "",
-         "order" : 4,
-         "bits" : {
-            "total" : "16",
             "array_items" : 0,
-            "type" : "uint16_t"
+            "total" : "16"
+         },
+         "hints" : ""
+      },
+      "unk0" : {
+         "hints" : "",
+         "bits" : {
+            "total" : 32,
+            "type" : "uint8_t",
+            "array_items" : 4
+         },
+         "order" : 105
+      },
+      "rebel_divisor" : {
+         "hints" : "",
+         "bits" : {
+            "type" : "uint32_t",
+            "array_items" : 0,
+            "total" : "32"
+         },
+         "order" : 153
+      },
+      "y" : {
+         "hints" : "",
+         "order" : 102,
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 0,
+            "total" : "8"
+         }
+      },
+      "unka" : {
+         "hints" : "",
+         "order" : 146,
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 6,
+            "total" : 48
+         }
+      },
+      "unk6" : {
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 16,
+            "total" : 128
+         },
+         "order" : 109,
+         "hints" : ""
+      },
+      "rebel_dividend" : {
+         "hints" : "",
+         "order" : 152,
+         "bits" : {
+            "type" : "uint32_t",
+            "array_items" : 0,
+            "total" : "32"
+         }
+      },
+      "nation" : {
+         "hints" : "",
+         "bits" : {
+            "total" : "8",
+            "array_items" : 0,
+            "type" : "uint8_t"
+         },
+         "order" : 104
+      },
+      "stock" : {
+         "hints" : "",
+         "order" : 150,
+         "bits" : {
+            "array_items" : 16,
+            "type" : "uint16_t",
+            "total" : 256
+         }
+      },
+      "profession" : {
+         "hints" : "",
+         "bits" : {
+            "total" : 256,
+            "type" : "uint8_t",
+            "array_items" : 32
+         },
+         "order" : 108
+      },
+      "occupation" : {
+         "hints" : "",
+         "order" : 107,
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 32,
+            "total" : 256
+         }
+      },
+      "population" : {
+         "hints" : "",
+         "bits" : {
+            "type" : "uint8_t",
+            "array_items" : 0,
+            "total" : "8"
+         },
+         "order" : 106
+      },
+      "x" : {
+         "hints" : "",
+         "order" : 101,
+         "bits" : {
+            "total" : "8",
+            "type" : "uint8_t",
+            "array_items" : 0
+         }
+      },
+      "unkd" : {
+         "bits" : {
+            "total" : 64,
+            "type" : "uint8_t",
+            "array_items" : 8
+         },
+         "order" : 151,
+         "hints" : ""
+      },
+      "custom_house" : {
+         "silver" : {
+            "bits" : {
+               "total" : "1",
+               "type" : "uint16_t",
+               "array_items" : 0
+            },
+            "order" : 137,
+            "hints" : ""
+         },
+         "tools" : {
+            "order" : 144,
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint16_t"
+            },
+            "hints" : ""
+         },
+         "coats" : {
+            "hints" : "",
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            },
+            "order" : 142
+         },
+         "cotton" : {
+            "hints" : "",
+            "order" : 133,
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            }
+         },
+         "rum" : {
+            "hints" : "",
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            },
+            "order" : 139
+         },
+         "horses" : {
+            "order" : 138,
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            },
+            "hints" : ""
+         },
+         "cloth" : {
+            "hints" : "",
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint16_t"
+            },
+            "order" : 141
+         },
+         "muskets" : {
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 145,
+            "hints" : ""
+         },
+         "tobacco" : {
+            "hints" : "",
+            "order" : 132,
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint16_t"
+            }
+         },
+         "ore" : {
+            "hints" : "",
+            "order" : 136,
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            }
+         },
+         "food" : {
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            },
+            "order" : 130,
+            "hints" : ""
+         },
+         "sugar" : {
+            "order" : 131,
+            "bits" : {
+               "total" : "1",
+               "array_items" : 0,
+               "type" : "uint16_t"
+            },
+            "hints" : ""
+         },
+         "cigars" : {
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 140,
+            "hints" : ""
+         },
+         "trade_goods" : {
+            "order" : 143,
+            "bits" : {
+               "array_items" : 0,
+               "type" : "uint16_t",
+               "total" : "1"
+            },
+            "hints" : ""
+         },
+         "lumber" : {
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            },
+            "order" : 135,
+            "hints" : ""
+         },
+         "furs" : {
+            "hints" : "",
+            "order" : 134,
+            "bits" : {
+               "type" : "uint16_t",
+               "array_items" : 0,
+               "total" : "1"
+            }
          }
       }
    }

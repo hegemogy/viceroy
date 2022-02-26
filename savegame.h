@@ -66,7 +66,7 @@ static const char *nation_list[] = {
 	/*  4 */ "Inca",
 	/*  5 */ "Aztec",
 	/*  6 */ "Awarak",
-	/*  7 */ "Iroqui",
+	/*  7 */ "Iroquois",
 	/*  8 */ "Cherokee",
 	/*  9 */ "Apache",
 	/* 10 */ "Sioux",
@@ -146,6 +146,13 @@ static const char *difficulty_list[] = {
 	"Conquistador",
 	"Governor    ",
 	"Viceroy     ",
+};
+
+static const char *tech_list[] = {
+	"Semi-Nomadic",
+	"Agrarian",
+	"Advanced",
+	"Civilized",
 };
 
 struct savegame {
@@ -432,9 +439,14 @@ struct savegame {
 	} __attribute__ ((packed)) *tribe;
 
 	struct indian {
-		uint8_t unk0[58];
+		uint8_t capitol_x;
+		uint8_t capitol_y;
+		uint8_t tech;
+		uint8_t unk1[11];
+		int16_t tons[16];
+		uint8_t unk2[12];
 		uint8_t met_by_player[4];
-		uint8_t unk1[8]; 
+		uint8_t unk3[8]; 
         uint16_t alarm_by_player[4];
 	} __attribute__ ((packed)) indian[8];
 

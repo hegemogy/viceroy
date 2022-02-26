@@ -19,8 +19,9 @@ void print_nation(const struct savegame::nation *nation,                        
 void print_tribe( const struct savegame::tribe  *tribe,  uint16_t tribe_count,  int just_this_one = -1);
 void print_indian(const struct savegame::indian *indian,                        int just_this_one = -1);
 void print_stuff( const struct savegame::stuff  *stuff);
-void print_map(   const struct savegame::map    *map);
+void print_map(   const struct savegame::map    *map, int given_x, int given_y);
 void print_tail(  const struct savegame::tail   *tail);
+void print_bytes( const uint8_t *bytes,uint8_t size); 
 
 void dump(void *address, size_t bytes, const char *filename);
 
@@ -34,7 +35,6 @@ void print_help(const char *prog){
 	fprintf(stderr, "-o, --other      displays other section of savegame  \n");
 	fprintf(stderr, "-s, --stuff      displays stuff section of savegame  \n");
 	fprintf(stderr, "-m, --map        displays map section of savegame    \n");
-	fprintf(stderr, "-J, --json       displays parsed savegame in JSON    \n");
 	fprintf(stderr, "                                                     \n");
 	fprintf(stderr, "If N is given, displays a single entry in the section\n");
 	fprintf(stderr, "-pN, --player=N  displays player section of savegame \n");
@@ -43,8 +43,14 @@ void print_help(const char *prog){
 	fprintf(stderr, "-tN, --tribe=N   displays tribe section of savegame  \n");
 	fprintf(stderr, "-iN, --indian=N  displays indian section of savegame \n");
 	fprintf(stderr, "                                                     \n");
+	fprintf(stderr, "-J, --json       displays parsed savegame in JSON    \n");
+	fprintf(stderr, "-f, --focus      only displays undeciphered data     \n");
+	fprintf(stderr, "-xN / -yN        display map details at x,y          \n");
+	fprintf(stderr, "                                                     \n");
 	fprintf(stderr, "--colony10  writes modificaions to COLONY10.SAV      \n");
 }
+
+int verbose_mode = -1; /* print all */
 
 int main(int argc, char *argv[])
 {
@@ -67,7 +73,7 @@ int main(int argc, char *argv[])
 	 */
 	int opt_head = 0, opt_player = 0, opt_other = 0, opt_colony = 0, opt_unit = 0,
 	    opt_nation = 0, opt_tribe = 0, opt_stuff = 0, opt_indian = 0, opt_map = 0,
-	    opt_tail = 0, opt_help = 0, opt_json = 0, opt_colony10 = 0;
+	    opt_tail = 0, opt_help = 0, opt_json = 0, opt_colony10 = 0, opt_x = 0, opt_y = 0;
 
 	static struct option long_options[] = {
 		{ "head",     no_argument,       NULL,          'H' },
@@ -82,12 +88,15 @@ int main(int argc, char *argv[])
 		{ "map",      no_argument,       NULL,          'm' },
 		{ "tail",     no_argument,       NULL,          'T' },
 		{ "json",     no_argument,       NULL,          'J' },
+		{ "focus",    no_argument,       NULL,          'f' },
+		{ "x",        required_argument,       NULL,          'x' },
+		{ "y",        required_argument,       NULL,          'y' },
 		{ "colony10", no_argument,       &opt_colony10, -1  },
 		{ "help",     no_argument,       NULL,          'h' },
 		{ NULL,       no_argument, NULL,  0  }
 	};
 
-	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::t::i::smThJ", long_options, &optindex)) != -1) {
+	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::t::i::smThJfx:y:", long_options, &optindex)) != -1) {
 		switch (c) {
 
 			case 0:
@@ -129,6 +138,15 @@ int main(int argc, char *argv[])
 			case 'm': opt_map    = -1; break;
 			case 'T': opt_tail   = -1; break;
 			case 'J': opt_json   = -1; break;
+			case 'f': verbose_mode = 0; break;
+			case 'y': 
+				if (optarg && isdigit(optarg[0]) )
+					opt_y = atoi(optarg) + 1;
+				break;
+			case 'x':
+				if (optarg && isdigit(optarg[0]) )
+					opt_x = atoi(optarg) + 1;
+				break;
 
 			case '?': /* fall through to 'h'*/
 				fprintf(stderr, "Unknown option '%s'\n", argv[optind-1]);
@@ -222,7 +240,7 @@ int main(int argc, char *argv[])
 			print_stuff(&(sg.stuff));
 	
 		if (opt_map)
-			print_map(&(sg.map));
+			print_map(&(sg.map),opt_x,opt_y);
 	
 		if (opt_tail)
 			print_tail(&(sg.tail));
@@ -961,28 +979,37 @@ void print_tribe(const struct savegame::tribe  *tribe,  uint16_t tribe_count, in
 	int start = (just_this_one == -1) ? 0 : just_this_one;
 
 	for (int i = start; i < tribe_count; ++i) {
-		printf("[%3d] (%3d, %3d): %2d %-11s : ", i, tribe[i].x, tribe[i].y, tribe[i].population, nation_list[tribe[i].nation]);
-		printf("state: artillery(%d) learned(%d) capital(%d) scouted(%d) %d %d %d %d, ",
-			tribe[i].state.artillery, tribe[i].state.learned, tribe[i].state.capital, tribe[i].state.scouted,
-			tribe[i].state.unk5, tribe[i].state.unk6, tribe[i].state.unk7, tribe[i].state.unk8);
+		printf("[%3d] (%3d, %3d):%-8s:", i, tribe[i].x, tribe[i].y, nation_list[tribe[i].nation]);
+        if (verbose_mode) {
+		    printf("pop(%2d) artillery(%d) learned(%d) capital(%d) scouted(%d) %d %d %d %d, ",
+                tribe[i].population, 
+                tribe[i].state.artillery, tribe[i].state.learned, tribe[i].state.capital, tribe[i].state.scouted,
+                tribe[i].state.unk5, tribe[i].state.unk6, tribe[i].state.unk7, tribe[i].state.unk8
+            );
 
-		printf("mission(%2d) ", tribe[i].mission);
+		    printf("mission(%2d) ", tribe[i].mission);
+        }
 
-		for (int j = 0; j < sizeof (tribe[i].unk1); ++j)
-			printf("%02x ", tribe[i].unk1[j]);
+		print_bytes(tribe[i].unk1,sizeof (tribe[i].unk1));
 
-        int last_trade = tribe[i].last_trade;
-        const char* last_trade_string = last_trade<16? cargo_list[tribe[i].last_trade] : "none"; 
-        printf("last_trade(%s) ", last_trade_string);
+        if (verbose_mode) {
+            int last_trade = tribe[i].last_trade;
+            const char* last_trade_string = last_trade<16? cargo_list[tribe[i].last_trade] : "none"; 
+            printf("last_trade(%s) ", last_trade_string);
+        }
 
     	printf("%02x ", tribe[i].unk2);
 		
-        printf("panic(%2d) ", tribe[i].panic);
+        if (verbose_mode) {
+            printf("panic(%2d) ", tribe[i].panic);
+        }
 
-		for (int j = 0; j < sizeof (tribe[i].unk3); ++j)
-			printf("%02x ", tribe[i].unk3[j]);
+		print_bytes(tribe[i].unk3,sizeof (tribe[i].unk3));
 
-		printf("%02x\n", tribe[i].population_loss_in_current_turn);
+        if (verbose_mode) {
+		    printf("lost_pop(%02x)", tribe[i].population_loss_in_current_turn);
+        }
+	    printf("\n");
 
 		if (just_this_one != -1)
 			break;
@@ -996,30 +1023,54 @@ void print_indian(const struct savegame::indian *indian, int just_this_one)
 
 	int start = (just_this_one == -1) ? 0 : just_this_one;
 
-	for (int i = 0; i < 8; ++i) {
-        printf("%-8s:", indian_list[i]);
+	for (int i = start; i < 8; ++i) {
+        printf("%-8s:",indian_list[i]);
+        if (verbose_mode) {
+            printf("capitol(%d,%d) tech(%s)", indian[i].capitol_x,indian[i].capitol_y,tech_list[indian[i].tech]);
+   		    printf("\n%9s","");
+        }
 
-		for (int j = 0; j < sizeof (indian[i].unk0); ++j) {
-			printf("%02x ", indian[i].unk0[j]);
-		}
+        print_bytes(indian[i].unk1,sizeof(indian[i].unk1));
+		
+        if (verbose_mode) {
+		    printf("\n%9s","");
+            for (int j = 0; j < 16; ++j) {
+                printf("%s(%d) ", cargo_list[j], indian[i].tons[j]);
+            }
+        }
+		
+        printf("\n%9s","");
+        print_bytes(indian[i].unk2,sizeof(indian[i].unk2));
 
-		for (int j = 0; j < 4; ++j) {
-			printf("%.*s_met(%3d) ", 3,player_list[j],indian[i].met_by_player[j]);
-		}
+        if (verbose_mode) {
+            printf("\n%9s","");
+            for (int j = 0; j < 4; ++j) {
+                printf("%.*s_met(%3d) ", 3,player_list[j],indian[i].met_by_player[j]);
+            }
+        }
+		
+		printf("\n%9s","");
+        print_bytes(indian[i].unk3,sizeof(indian[i].unk3));
 
-		for (int j = 0; j < sizeof (indian[i].unk1); ++j) {
-			printf("%02x ", indian[i].unk1[j]);
-		}
-
-		for (int j = 0; j < 4; ++j) {
-			printf("%.*s_alarm(%3d) ", 3, player_list[j],indian[i].alarm_by_player[j]);
-			assert(indian[i].alarm_by_player[j] <= 255 );
-		}
-		printf("\n");
+        if (verbose_mode) {
+            printf("\n%9s","");
+            for (int j = 0; j < 4; ++j) {
+                printf("%.*s_alarm(%3d) ", 3, player_list[j],indian[i].alarm_by_player[j]);
+                assert(indian[i].alarm_by_player[j] <= 255 );
+            }
+        }
+        printf("\n");
 
 		if (just_this_one != -1)
 			break;
 	}
+}
+
+void print_bytes(const uint8_t *bytes, uint8_t size) 
+{
+    for (int i = 0; i < size; ++i) {
+        printf("%02x ", bytes[i]);
+    }
 }
 
 void print_stuff(const struct savegame::stuff *stuff)
@@ -1061,19 +1112,37 @@ void print_stuff(const struct savegame::stuff *stuff)
 	printf("Viewport: (%3d, %3d)\n", stuff->viewport_x, stuff->viewport_y);
 }
 
-void print_map(const struct savegame::map *map)
+void print_map(const struct savegame::map *map, int given_x, int given_y)
 {
-	printf("-- map --\n");
+	printf("-- map ");
+    if (given_x != 0)
+ 	    printf("x=%d ",given_x);
+    if (given_y != 0)
+ 	    printf("x=%d ",given_y);
+	printf("--\n");
+    for (int i = 0; i < 4; ++i) {
+        for (int y = given_y; y < 72; ++y) {
+            for (int x = given_x; x < 58; ++x) {
+                printf("%02x",       map->layer[i][x + (y * 58)].water ? map->layer[i][x + (y * 58)].tile + 9 : map->layer[i][x + (y * 58)].tile);
 
-	for (int i = 0; i < 4; ++i) {
-		for (int y = 0; y < 72; ++y) {
-			for (int x = 0; x < 58; ++x)
-				printf("%x", map->layer[i][x + (y * 58)].water ? map->layer[i][x + (y * 58)].tile + 9 : map->layer[i][x + (y * 58)].tile);
-//				printf("%02x(%d)", map->layer[i][x + (y * 58)].full, map->layer[i][x + (y * 58)].tile);
-			printf("\n");
-		}
-		printf("\n");
-	}
+                //printf("%02x(%d)", map->layer[i][x + (y * 58)].full, map->layer[i][x + (y * 58)].tile);
+		        if (given_x != 0) {
+                    printf("  tile:%02x\n  forest:%02x\n  water:%02x\n  phys:%02x\n",       
+                            map->layer[i][x + (y * 58)].tile, 
+                            map->layer[i][x + (y * 58)].forest, 
+                            map->layer[i][x + (y * 58)].water, 
+                            map->layer[i][x + (y * 58)].phys 
+                            );
+                    break;
+
+                }
+            }
+            printf("\n");
+            if (given_y != 0)
+                break;
+        }
+        printf("\n");
+    }
 }
 
 void print_tail(const struct savegame::tail *tail)
