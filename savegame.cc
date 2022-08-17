@@ -48,6 +48,7 @@ void print_help(const char *prog){
 	fprintf(stderr, "-xN / -yN        display map details at x,y          \n");
 	fprintf(stderr, "                                                     \n");
 	fprintf(stderr, "--colony10  writes modificaions to COLONY10.SAV      \n");
+	fprintf(stderr, "-SN --stockade=N  toggles stockade for colony N      \n");
 }
 
 int verbose_mode = -1; /* print all */
@@ -73,7 +74,8 @@ int main(int argc, char *argv[])
 	 */
 	int opt_head = 0, opt_player = 0, opt_other = 0, opt_colony = 0, opt_unit = 0,
 	    opt_nation = 0, opt_tribe = 0, opt_stuff = 0, opt_indian = 0, opt_map = 0,
-	    opt_tail = 0, opt_help = 0, opt_json = 0, opt_colony10 = 0, opt_x = 0, opt_y = 0;
+	    opt_tail = 0, opt_help = 0, opt_json = 0, opt_colony10 = 0, opt_x = 0, 
+        opt_y = 0, opt_stockade = 0;
 
 	static struct option long_options[] = {
 		{ "head",     no_argument,       NULL,          'H' },
@@ -89,14 +91,15 @@ int main(int argc, char *argv[])
 		{ "tail",     no_argument,       NULL,          'T' },
 		{ "json",     no_argument,       NULL,          'J' },
 		{ "focus",    no_argument,       NULL,          'f' },
-		{ "x",        required_argument,       NULL,          'x' },
-		{ "y",        required_argument,       NULL,          'y' },
+		{ "x",        required_argument, NULL,          'x' },
+		{ "y",        required_argument, NULL,          'y' },
+		{ "stockade", required_argument, NULL,          'S' },
 		{ "colony10", no_argument,       &opt_colony10, -1  },
 		{ "help",     no_argument,       NULL,          'h' },
 		{ NULL,       no_argument, NULL,  0  }
 	};
 
-	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::t::i::smThJfx:y:", long_options, &optindex)) != -1) {
+	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::t::i::smThJfx:y:S:", long_options, &optindex)) != -1) {
 		switch (c) {
 
 			case 0:
@@ -141,11 +144,15 @@ int main(int argc, char *argv[])
 			case 'f': verbose_mode = 0; break;
 			case 'y': 
 				if (optarg && isdigit(optarg[0]) )
-					opt_y = atoi(optarg) + 1;
+					opt_y = atoi(optarg);
 				break;
 			case 'x':
 				if (optarg && isdigit(optarg[0]) )
-					opt_x = atoi(optarg) + 1;
+					opt_x = atoi(optarg);
+				break;
+			case 'S': 
+				if (optarg && isdigit(optarg[0]) )
+					opt_stockade = atoi(optarg) + 1;
 				break;
 
 			case '?': /* fall through to 'h'*/
@@ -168,7 +175,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	for (int fi = optind; fi < argc; ++fi) {
+    for (int fi = optind; fi < argc; ++fi) {
 		struct savegame sg;
 
 		FILE *fp = fopen(argv[fi], "r");	
@@ -245,6 +252,10 @@ int main(int argc, char *argv[])
 		if (opt_tail)
 			print_tail(&(sg.tail));
 	
+		if (opt_stockade) {
+		    sg.colony[opt_stockade].buildings.stockade = 0;
+        }
+
 		if (opt_colony10) {
 
 			/* Find our player */
@@ -310,13 +321,15 @@ int main(int argc, char *argv[])
 				// Opposing nations, remove pesky stockades
 				sg.colony[i].buildings.stockade = 0;
 			}
-	
+        }
+		
+        if ( opt_stockade || opt_colony10 ) {
 			FILE *fop = fopen("COLONY10.SAV", "w");
 			fwrite(&sg.head, sizeof (struct savegame::head), 1, fop);
 			fwrite(&sg.player, sizeof (struct savegame::player), sg.count.player, fop);
 			fwrite(&sg.other, sizeof (struct savegame::other), 1, fop);
 			fwrite(sg.colony, sizeof (struct savegame::colony), sg.count.colony, fop);
-			fwrite(sg.unit, sizeof (struct savegame::unit), sg.count.colony, fop);
+			fwrite(sg.unit, sizeof (struct savegame::unit), sg.count.unit, fop);
 			fwrite(sg.nation, sizeof (struct savegame::nation), sg.count.nation, fop);
 			fwrite(sg.tribe, sizeof (struct savegame::tribe), sg.count.tribe, fop);
 			fwrite(sg.indian, sizeof (struct savegame::indian), sg.count.indian, fop);
@@ -1123,11 +1136,12 @@ void print_map(const struct savegame::map *map, int given_x, int given_y)
     for (int i = 0; i < 4; ++i) {
         for (int y = given_y; y < 72; ++y) {
             for (int x = given_x; x < 58; ++x) {
-                printf("%02x",       map->layer[i][x + (y * 58)].water ? map->layer[i][x + (y * 58)].tile + 9 : map->layer[i][x + (y * 58)].tile);
+                printf("%02x",   map->layer[i][x + (y * 58)].full);//    map->layer[i][x + (y * 58)].water ? map->layer[i][x + (y * 58)].tile + 9 : map->layer[i][x + (y * 58)].tile);
 
                 //printf("%02x(%d)", map->layer[i][x + (y * 58)].full, map->layer[i][x + (y * 58)].tile);
 		        if (given_x != 0) {
-                    printf("  tile:%02x\n  forest:%02x\n  water:%02x\n  phys:%02x\n",       
+                    printf("full:%02x\n  tile:%02x\n  forest:%02x\n  water:%02x\n  phys:%02x\n",
+                            map->layer[i][x + (y * 58)].full, 
                             map->layer[i][x + (y * 58)].tile, 
                             map->layer[i][x + (y * 58)].forest, 
                             map->layer[i][x + (y * 58)].water, 
