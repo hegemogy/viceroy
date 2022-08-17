@@ -7,9 +7,9 @@
 #include <string.h>
 
 #include "savegame.h"
-#include "savegame_json.h"
+#include "savegame_api.h"
 
-void print_json(  const struct savegame   *sg);
+//void print_json(  const struct savegame   *sg);
 void print_head(  const struct savegame::head   *head);
 void print_player(const struct savegame::player *player,                        int just_this_one = -1);
 void print_other( const struct savegame::other  *other);
@@ -22,6 +22,8 @@ void print_stuff( const struct savegame::stuff  *stuff);
 void print_map(   const struct savegame::map    *map, int given_x, int given_y);
 void print_tail(  const struct savegame::tail   *tail);
 void print_bytes( const uint8_t *bytes,uint8_t size); 
+            
+void set_value(  struct savegame   *sg, std::string input, int i, int new_value);
 
 void dump(void *address, size_t bytes, const char *filename);
 
@@ -75,7 +77,7 @@ int main(int argc, char *argv[])
 	int opt_head = 0, opt_player = 0, opt_other = 0, opt_colony = 0, opt_unit = 0,
 	    opt_nation = 0, opt_tribe = 0, opt_stuff = 0, opt_indian = 0, opt_map = 0,
 	    opt_tail = 0, opt_help = 0, opt_json = 0, opt_colony10 = 0, opt_x = 0, 
-        opt_y = 0, opt_stockade = 0;
+        opt_y = 0, opt_value = -1;
 
 	static struct option long_options[] = {
 		{ "head",     no_argument,       NULL,          'H' },
@@ -93,13 +95,13 @@ int main(int argc, char *argv[])
 		{ "focus",    no_argument,       NULL,          'f' },
 		{ "x",        required_argument, NULL,          'x' },
 		{ "y",        required_argument, NULL,          'y' },
-		{ "stockade", required_argument, NULL,          'S' },
+		{ "stockade", required_argument, NULL,          'v' },
 		{ "colony10", no_argument,       &opt_colony10, -1  },
 		{ "help",     no_argument,       NULL,          'h' },
 		{ NULL,       no_argument, NULL,  0  }
 	};
 
-	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::t::i::smThJfx:y:S:", long_options, &optindex)) != -1) {
+	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::t::i::smThJfx:y:v:", long_options, &optindex)) != -1) {
 		switch (c) {
 
 			case 0:
@@ -150,9 +152,9 @@ int main(int argc, char *argv[])
 				if (optarg && isdigit(optarg[0]) )
 					opt_x = atoi(optarg);
 				break;
-			case 'S': 
+			case 'v': 
 				if (optarg && isdigit(optarg[0]) )
-					opt_stockade = atoi(optarg) + 1;
+					opt_value = atoi(optarg);
 				break;
 
 			case '?': /* fall through to 'h'*/
@@ -175,13 +177,12 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-    for (int fi = optind; fi < argc; ++fi) {
 		struct savegame sg;
 
-		FILE *fp = fopen(argv[fi], "r");	
+		FILE *fp = fopen(argv[optind], "r");	
 
 		if (fp == NULL) {
-			printf("Could not open file: %s\n", argv[fi]);
+			printf("Could not open file: %s\n", argv[optind]);
 			exit(EXIT_FAILURE);
 		}
 	
@@ -216,8 +217,8 @@ int main(int argc, char *argv[])
 	
 		fclose(fp);
 
-        if (opt_json)
-            print_json(&(sg));
+//        if (opt_json)
+//            print_json(&(sg));
 	
 		if (opt_head)
 			print_head(&(sg.head));
@@ -252,8 +253,9 @@ int main(int argc, char *argv[])
 		if (opt_tail)
 			print_tail(&(sg.tail));
 	
-		if (opt_stockade) {
-		    sg.colony[opt_stockade].buildings.stockade = 0;
+		if (opt_value>=0) {
+		    //sg.colony[opt_stockade].buildings.stockade = 0;
+            set_value(&sg,std::string(argv[optind+1]),atoi(argv[optind+2]),opt_value);
         }
 
 		if (opt_colony10) {
@@ -323,7 +325,7 @@ int main(int argc, char *argv[])
 			}
         }
 		
-        if ( opt_stockade || opt_colony10 ) {
+        if ( opt_value>=0 || opt_colony10 ) {
 			FILE *fop = fopen("COLONY10.SAV", "w");
 			fwrite(&sg.head, sizeof (struct savegame::head), 1, fop);
 			fwrite(&sg.player, sizeof (struct savegame::player), sg.count.player, fop);
@@ -342,7 +344,6 @@ int main(int argc, char *argv[])
 		free(sg.colony);
 		free(sg.unit);
 		free(sg.tribe);
-	}
 	
 	return EXIT_SUCCESS;
 }
