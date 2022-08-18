@@ -12,3 +12,5 @@ missing
 savegame
 savegame.o
 stamp-h1
+savegame_api.h
+savegame_json.h

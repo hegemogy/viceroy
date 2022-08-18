@@ -403,8 +403,7 @@ void print_head(  const struct savegame::head   *head)
 	printf("Tutorial 19: %5s\n", head->tut1.nr19 ? "true" : "false");
 	printf("\n");
 
-	for (int i = 0; i < sizeof (head->unk1); ++i)
-		printf("%02x ", head->unk1[i]);
+	printf("%02x ", head->unk1);
 	printf("\n\n");
 
 	printf("Set Game Options:\n");

@@ -127,7 +127,7 @@ my $all_functions = join "\n${INDENT}else if ",
     }
     (
     map { render_merge_function( \%DATA, $_ ) } (),
-    'head'#, 'other', 'stuff', 'tail'
+    'head', 'other',# 'stuff', 'tail'
     ),
     ( map { render_merge_list_function( \%DATA, $_ ) } (),
         #'player','nation','indian',

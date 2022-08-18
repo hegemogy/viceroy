@@ -182,7 +182,7 @@ struct savegame {
 			uint8_t nr19  : 1;
 		} __attribute__ ((packed)) tut1;
 
-		uint8_t unk1[1];
+		uint8_t unk1;
 
 		struct game_options {
 			uint16_t unknown7           : 7;
