@@ -20,10 +20,10 @@ void print_tribe( const struct savegame::tribe  *tribe,  uint16_t tribe_count,  
 void print_indian(const struct savegame::indian *indian,                        int just_this_one = -1);
 void print_stuff( const struct savegame::stuff  *stuff);
 void print_map(   const struct savegame::map    *map, int given_x, int given_y);
-void print_tail(  const struct savegame::tail   *tail);
+void print_tail(  const uint8_t *tail, int size);
 void print_bytes( const uint8_t *bytes,uint8_t size); 
             
-void set_value(  struct savegame   *sg, std::string input, int i, int new_value);
+void set_value(  struct savegame   *sg, std::string input, int new_value, int i, int j);
 
 void dump(void *address, size_t bytes, const char *filename);
 
@@ -43,14 +43,13 @@ void print_help(const char *prog){
 	fprintf(stderr, "-uN, --unit=N    displays unit section of savegame   \n");
 	fprintf(stderr, "-nN, --nation=N  displays nation section of savegame \n");
 	fprintf(stderr, "-tN, --tribe=N   displays tribe section of savegame  \n");
-	fprintf(stderr, "-iN, --indian=N  displays indian section of savegame \n");
+	fprintf(stderr, "-vN, --village=N displays village section of savegame\n");
 	fprintf(stderr, "                                                     \n");
-	fprintf(stderr, "-J, --json       displays parsed savegame in JSON    \n");
-	fprintf(stderr, "-f, --focus      only displays undeciphered data     \n");
+	fprintf(stderr, "-iN / -jN        indices to identify an api element  \n");
 	fprintf(stderr, "-xN / -yN        display map details at x,y          \n");
+	fprintf(stderr, "-f, --focus      only displays undeciphered data     \n");
 	fprintf(stderr, "                                                     \n");
 	fprintf(stderr, "--colony10  writes modificaions to COLONY10.SAV      \n");
-	fprintf(stderr, "-SN --stockade=N  toggles stockade for colony N      \n");
 }
 
 int verbose_mode = -1; /* print all */
@@ -77,7 +76,7 @@ int main(int argc, char *argv[])
 	int opt_head = 0, opt_player = 0, opt_other = 0, opt_colony = 0, opt_unit = 0,
 	    opt_nation = 0, opt_tribe = 0, opt_stuff = 0, opt_indian = 0, opt_map = 0,
 	    opt_tail = 0, opt_help = 0, opt_json = 0, opt_colony10 = 0, opt_x = 0, 
-        opt_y = 0, opt_value = -1;
+        opt_y = 0, opt_i = -1,opt_j = -1;
 
 	static struct option long_options[] = {
 		{ "head",     no_argument,       NULL,          'H' },
@@ -86,13 +85,14 @@ int main(int argc, char *argv[])
 		{ "colony",   optional_argument, NULL,          'c' },
 		{ "unit",     optional_argument, NULL,          'u' },
 		{ "nation",   optional_argument, NULL,          'n' },
+		{ "village",  optional_argument, NULL,          'v' },
 		{ "tribe",    optional_argument, NULL,          't' },
-		{ "indian",   optional_argument, NULL,          'i' },
 		{ "stuff",    no_argument,       NULL,          's' },
 		{ "map",      no_argument,       NULL,          'm' },
 		{ "tail",     no_argument,       NULL,          'T' },
-		{ "json",     no_argument,       NULL,          'J' },
 		{ "focus",    no_argument,       NULL,          'f' },
+		{ "i",        no_argument,       NULL,          'i' },
+		{ "j",        no_argument,       NULL,          'j' },
 		{ "x",        required_argument, NULL,          'x' },
 		{ "y",        required_argument, NULL,          'y' },
 		{ "stockade", required_argument, NULL,          'v' },
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 		{ NULL,       no_argument, NULL,  0  }
 	};
 
-	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::t::i::smThJfx:y:v:", long_options, &optindex)) != -1) {
+	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::v::i::smThJfx:y:i:j:", long_options, &optindex)) != -1) {
 		switch (c) {
 
 			case 0:
@@ -131,11 +131,11 @@ int main(int argc, char *argv[])
 				if (optarg && isdigit(optarg[0]) )
 					opt_nation = atoi(optarg) + 1;
 				break;
-			case 't': opt_tribe  = -1;
+			case 'v': opt_tribe  = -1;
 				if (optarg && isdigit(optarg[0]) )
 					opt_tribe = atoi(optarg) + 1;
 				break;
-			case 'i': opt_indian = -1;
+			case 't': opt_indian = -1;
 				if (optarg && isdigit(optarg[0]) )
 					opt_indian = atoi(optarg) + 1;
 				break;
@@ -152,9 +152,13 @@ int main(int argc, char *argv[])
 				if (optarg && isdigit(optarg[0]) )
 					opt_x = atoi(optarg);
 				break;
-			case 'v': 
+			case 'i': 
 				if (optarg && isdigit(optarg[0]) )
-					opt_value = atoi(optarg);
+					opt_i = atoi(optarg);
+				break;
+			case 'j': 
+				if (optarg && isdigit(optarg[0]) )
+					opt_j = atoi(optarg);
 				break;
 
 			case '?': /* fall through to 'h'*/
@@ -195,6 +199,7 @@ int main(int argc, char *argv[])
         sg.count.indian = 8;
         sg.count.player = 4;
         sg.count.nation = 4;
+        sg.count.tail   = 1502;
 
 		res = fread(&sg.player, sizeof (struct savegame::player), sg.count.player, fp);
 		res = fread(&sg.other, sizeof (struct savegame::other), 1, fp);
@@ -213,7 +218,7 @@ int main(int argc, char *argv[])
         res = fread(&sg.indian, sizeof (struct savegame::indian), sg.count.indian, fp);
 		res = fread(&sg.stuff, sizeof (struct savegame::stuff), 1, fp);
 		res = fread(&sg.map, sizeof (struct savegame::map), 1, fp);
-		res = fread(&sg.tail, sizeof (struct savegame::tail), 1, fp);
+		res = fread(&sg.tail, sizeof (uint8_t), sg.count.tail, fp);
 	
 		fclose(fp);
 
@@ -251,11 +256,10 @@ int main(int argc, char *argv[])
 			print_map(&(sg.map),opt_x,opt_y);
 	
 		if (opt_tail)
-			print_tail(&(sg.tail));
+			print_tail(sg.tail,sg.count.tail);
 	
-		if (opt_value>=0) {
-		    //sg.colony[opt_stockade].buildings.stockade = 0;
-            set_value(&sg,std::string(argv[optind+1]),atoi(argv[optind+2]),opt_value);
+		if ( optind < argc ) {
+            set_value( &sg, std::string(argv[optind+1]), atoi(argv[optind+2]), opt_i, opt_j);
         }
 
 		if (opt_colony10) {
@@ -325,7 +329,7 @@ int main(int argc, char *argv[])
 			}
         }
 		
-        if ( opt_value>=0 || opt_colony10 ) {
+        if ( optind < argc || opt_colony10 ) {
 			FILE *fop = fopen("COLONY10.SAV", "w");
 			fwrite(&sg.head, sizeof (struct savegame::head), 1, fop);
 			fwrite(&sg.player, sizeof (struct savegame::player), sg.count.player, fop);
@@ -337,7 +341,7 @@ int main(int argc, char *argv[])
 			fwrite(sg.indian, sizeof (struct savegame::indian), sg.count.indian, fop);
 			fwrite(&sg.stuff, sizeof (struct savegame::stuff), 1, fop);
 			fwrite(&sg.map, sizeof (struct savegame::map), 1, fop);
-			fwrite(&sg.tail, sizeof(struct savegame::tail), 1, fop);
+			fwrite(&sg.tail, sizeof(uint8_t), sg.count.tail, fop);
 			fclose(fop);
 		}
 
@@ -1159,14 +1163,14 @@ void print_map(const struct savegame::map *map, int given_x, int given_y)
     }
 }
 
-void print_tail(const struct savegame::tail *tail)
+void print_tail(const uint8_t *tail, int size)
 {
 	printf("-- tail --\n");
 
-	for (int i = 0; i < sizeof (tail->unk); ++i) {
+	for (int i = 0; i < size; ++i) {
 		if (i % 20 == 0)
 			printf("\n");
-		printf("%02x ", tail->unk[i]);
+		printf("%02x ", tail[i]);
 	}
 	printf("\n");
 }

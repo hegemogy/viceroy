@@ -164,6 +164,7 @@ struct savegame {
         uint16_t player;
         uint16_t nation;
         uint16_t indian;
+        uint16_t tail;
 	} __attribute__ ((packed)) count;
     
 	struct head {
@@ -477,7 +478,6 @@ struct savegame {
 		} __attribute__ ((packed))  layer[4][58*72];
 	} __attribute__ ((packed)) map;
 
-	struct tail {
-		uint8_t unk[1502];
-	} __attribute__ ((packed)) tail;
+	uint8_t tail[1502];
+
 } __attribute__ ((packed));
