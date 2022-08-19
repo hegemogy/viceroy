@@ -261,18 +261,16 @@ int main(int argc, char *argv[])
             std::smatch smi;
             std::regex_match(key,smi,str_expr);
             if (smi.size()>1) {
-                i = atoi(smi[1].str().c_str());
-                std::regex regexp(smi[1].str());
-                key = regex_replace(key, regexp, "i");
+                i = atoi(smi.str(1).c_str());
+                key.replace(smi.position(1),smi.length(1),"i");
             }
 
             int j = -1;
             std::smatch smj;
             std::regex_match(key,smj,str_expr);
             if (smj.size()>1) {
-                j = atoi(smj[1].str().c_str());
-                std::regex regexp(smj[1].str());
-                key = regex_replace(key, regexp, "j");
+                j = atoi(smj.str(1).c_str());
+                key.replace(smj.position(1),smj.length(1),"j");
             }
 
             //printf("key=%s value=%s i=%d j=%d\n",key.c_str(),value.c_str(),i,j);
