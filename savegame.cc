@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <regex>
 
 #include "savegame.h"
 #include "savegame_api.h"
@@ -23,14 +24,16 @@ void print_map(   const struct savegame::map    *map, int given_x, int given_y);
 void print_tail(  const uint8_t *tail, int size);
 void print_bytes( const uint8_t *bytes,uint8_t size); 
             
-void set_value(  struct savegame   *sg, std::string input, int new_value, int i, int j);
+void set_value( struct savegame *sg, std::string input, std::string value, int i, int j);
 
 void dump(void *address, size_t bytes, const char *filename);
 
 void print_help(const char *prog){
-	fprintf(stderr, "Usage: %s [options] <COLONY0*.SAV> ...\n", prog);
+	fprintf(stderr, "Usage: %s -f <COLONY0*.SAV> [options|edits]\n", prog);
 	fprintf(stderr, "OPTIONs:\n");
 	fprintf(stderr, "-h, --help       displays this help message          \n");
+	fprintf(stderr, "                                                     \n");
+	fprintf(stderr, "-f, --file      savegame file to read in (and edit)  \n");
 	fprintf(stderr, "                                                     \n");
 	fprintf(stderr, "-H, --head       displays head section of savegame   \n");
 	fprintf(stderr, "-T, --tail       displays tail section of savegame   \n");
@@ -42,17 +45,14 @@ void print_help(const char *prog){
 	fprintf(stderr, "-pN, --player=N  displays player section of savegame \n");
 	fprintf(stderr, "-uN, --unit=N    displays unit section of savegame   \n");
 	fprintf(stderr, "-nN, --nation=N  displays nation section of savegame \n");
+	fprintf(stderr, "-iN, --indian=N  displays indian section of savegame \n");
 	fprintf(stderr, "-tN, --tribe=N   displays tribe section of savegame  \n");
-	fprintf(stderr, "-vN, --village=N displays village section of savegame\n");
 	fprintf(stderr, "                                                     \n");
-	fprintf(stderr, "-iN / -jN        indices to identify an api element  \n");
-	fprintf(stderr, "-xN / -yN        display map details at x,y          \n");
-	fprintf(stderr, "-f, --focus      only displays undeciphered data     \n");
+	fprintf(stderr, "EDITS are the API key and new value, joined by '='   \n");
+	fprintf(stderr, "The modified savegame is written to COLONY10.SAV     \n");
 	fprintf(stderr, "                                                     \n");
-	fprintf(stderr, "--colony10  writes modificaions to COLONY10.SAV      \n");
+	fprintf(stderr, "--colony10  performs several example modifications   \n");
 }
-
-int verbose_mode = -1; /* print all */
 
 int main(int argc, char *argv[])
 {
@@ -75,8 +75,9 @@ int main(int argc, char *argv[])
 	 */
 	int opt_head = 0, opt_player = 0, opt_other = 0, opt_colony = 0, opt_unit = 0,
 	    opt_nation = 0, opt_tribe = 0, opt_stuff = 0, opt_indian = 0, opt_map = 0,
-	    opt_tail = 0, opt_help = 0, opt_json = 0, opt_colony10 = 0, opt_x = 0, 
-        opt_y = 0, opt_i = -1,opt_j = -1;
+	    opt_tail = 0, opt_help = 0, opt_colony10 = 0, 
+        opt_x = 0, opt_y = 0;
+    char *opt_file;
 
 	static struct option long_options[] = {
 		{ "head",     no_argument,       NULL,          'H' },
@@ -85,23 +86,20 @@ int main(int argc, char *argv[])
 		{ "colony",   optional_argument, NULL,          'c' },
 		{ "unit",     optional_argument, NULL,          'u' },
 		{ "nation",   optional_argument, NULL,          'n' },
-		{ "village",  optional_argument, NULL,          'v' },
 		{ "tribe",    optional_argument, NULL,          't' },
+		{ "indian",   optional_argument, NULL,          'i' },
 		{ "stuff",    no_argument,       NULL,          's' },
 		{ "map",      no_argument,       NULL,          'm' },
 		{ "tail",     no_argument,       NULL,          'T' },
-		{ "focus",    no_argument,       NULL,          'f' },
-		{ "i",        no_argument,       NULL,          'i' },
-		{ "j",        no_argument,       NULL,          'j' },
+		{ "file",     required_argument, NULL,          'f' },
 		{ "x",        required_argument, NULL,          'x' },
 		{ "y",        required_argument, NULL,          'y' },
-		{ "stockade", required_argument, NULL,          'v' },
 		{ "colony10", no_argument,       &opt_colony10, -1  },
 		{ "help",     no_argument,       NULL,          'h' },
 		{ NULL,       no_argument, NULL,  0  }
 	};
 
-	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::v::i::smThJfx:y:i:j:", long_options, &optindex)) != -1) {
+	while ((c = getopt_long(argc, argv, ":Hp::oc::u::n::t::i::smThf:x:y:", long_options, &optindex)) != -1) {
 		switch (c) {
 
 			case 0:
@@ -131,19 +129,20 @@ int main(int argc, char *argv[])
 				if (optarg && isdigit(optarg[0]) )
 					opt_nation = atoi(optarg) + 1;
 				break;
-			case 'v': opt_tribe  = -1;
+			case 't': opt_tribe  = -1;
 				if (optarg && isdigit(optarg[0]) )
 					opt_tribe = atoi(optarg) + 1;
 				break;
-			case 't': opt_indian = -1;
+			case 'i': opt_indian = -1;
 				if (optarg && isdigit(optarg[0]) )
 					opt_indian = atoi(optarg) + 1;
 				break;
 			case 's': opt_stuff  = -1; break;
 			case 'm': opt_map    = -1; break;
 			case 'T': opt_tail   = -1; break;
-			case 'J': opt_json   = -1; break;
-			case 'f': verbose_mode = 0; break;
+			case 'f': 
+				opt_file = optarg;
+				break;
 			case 'y': 
 				if (optarg && isdigit(optarg[0]) )
 					opt_y = atoi(optarg);
@@ -151,14 +150,6 @@ int main(int argc, char *argv[])
 			case 'x':
 				if (optarg && isdigit(optarg[0]) )
 					opt_x = atoi(optarg);
-				break;
-			case 'i': 
-				if (optarg && isdigit(optarg[0]) )
-					opt_i = atoi(optarg);
-				break;
-			case 'j': 
-				if (optarg && isdigit(optarg[0]) )
-					opt_j = atoi(optarg);
 				break;
 
 			case '?': /* fall through to 'h'*/
@@ -183,10 +174,10 @@ int main(int argc, char *argv[])
 
 		struct savegame sg;
 
-		FILE *fp = fopen(argv[optind], "r");	
+		FILE *fp = fopen(opt_file, "r");	
 
 		if (fp == NULL) {
-			printf("Could not open file: %s\n", argv[optind]);
+			printf("Could not open file: %s\n", opt_file);
 			exit(EXIT_FAILURE);
 		}
 	
@@ -218,7 +209,7 @@ int main(int argc, char *argv[])
         res = fread(&sg.indian, sizeof (struct savegame::indian), sg.count.indian, fp);
 		res = fread(&sg.stuff, sizeof (struct savegame::stuff), 1, fp);
 		res = fread(&sg.map, sizeof (struct savegame::map), 1, fp);
-		res = fread(&sg.tail, sizeof (uint8_t), sg.count.tail, fp);
+		res = fread(&sg.tail, sizeof (savegame::tail), 1, fp);
 	
 		fclose(fp);
 
@@ -258,8 +249,34 @@ int main(int argc, char *argv[])
 		if (opt_tail)
 			print_tail(sg.tail,sg.count.tail);
 	
-		if ( optind < argc ) {
-            set_value( &sg, std::string(argv[optind+1]), atoi(argv[optind+2]), opt_i, opt_j);
+		std::string delimiter = "=";
+        for (int edit_index = optind; edit_index < argc; edit_index++) {
+            std::string s = argv[edit_index];
+			std::string key = s.substr(0, s.find(delimiter));
+			std::string value = s.substr(s.find(delimiter)+delimiter.length());
+
+            std::regex str_expr(".*?\\.([0-9]+).*");
+
+            int i = -1;
+            std::smatch smi;
+            std::regex_match(key,smi,str_expr);
+            if (smi.size()>1) {
+                i = atoi(smi[1].str().c_str());
+                std::regex regexp(smi[1].str());
+                key = regex_replace(key, regexp, "i");
+            }
+
+            int j = -1;
+            std::smatch smj;
+            std::regex_match(key,smj,str_expr);
+            if (smj.size()>1) {
+                j = atoi(smj[1].str().c_str());
+                std::regex regexp(smj[1].str());
+                key = regex_replace(key, regexp, "j");
+            }
+
+            //printf("key=%s value=%s i=%d j=%d\n",key.c_str(),value.c_str(),i,j);
+            set_value( &sg, key, value, i, j);
         }
 
 		if (opt_colony10) {
@@ -532,7 +549,7 @@ void print_player(const struct savegame::player *player, int just_this_one)
 	int start = (just_this_one == -1) ? 0 : just_this_one;
 
 	for (int i = start; i < 4; ++i) {
-		printf("%-11s: %23s / %23s : ", nation_list[i], player[i].name, player[i].country);
+		printf("%-11s: %23s / %23s : ", nation_list[i], player[i].name, player[i].country_name);
 		switch (player[i].control) {
 			case savegame::player::PLAYER: printf("Player "); break;
 			case savegame::player::AI:     printf("AI     "); break;
@@ -997,35 +1014,27 @@ void print_tribe(const struct savegame::tribe  *tribe,  uint16_t tribe_count, in
 
 	for (int i = start; i < tribe_count; ++i) {
 		printf("[%3d] (%3d, %3d):%-8s:", i, tribe[i].x, tribe[i].y, nation_list[tribe[i].nation]);
-        if (verbose_mode) {
-		    printf("pop(%2d) artillery(%d) learned(%d) capital(%d) scouted(%d) %d %d %d %d, ",
-                tribe[i].population, 
-                tribe[i].state.artillery, tribe[i].state.learned, tribe[i].state.capital, tribe[i].state.scouted,
-                tribe[i].state.unk5, tribe[i].state.unk6, tribe[i].state.unk7, tribe[i].state.unk8
-            );
+        printf("pop(%2d) artillery(%d) learned(%d) capital(%d) scouted(%d) %d %d %d %d, ",
+            tribe[i].population, 
+            tribe[i].state.artillery, tribe[i].state.learned, tribe[i].state.capital, tribe[i].state.scouted,
+            tribe[i].state.unk5, tribe[i].state.unk6, tribe[i].state.unk7, tribe[i].state.unk8
+        );
 
-		    printf("mission(%2d) ", tribe[i].mission);
-        }
+        printf("mission(%2d) ", tribe[i].mission);
 
 		print_bytes(tribe[i].unk1,sizeof (tribe[i].unk1));
 
-        if (verbose_mode) {
-            int last_trade = tribe[i].last_trade;
-            const char* last_trade_string = last_trade<16? cargo_list[tribe[i].last_trade] : "none"; 
-            printf("last_trade(%s) ", last_trade_string);
-        }
+        int last_trade = tribe[i].last_trade;
+        const char* last_trade_string = last_trade<16? cargo_list[tribe[i].last_trade] : "none"; 
+        printf("last_trade(%s) ", last_trade_string);
 
     	printf("%02x ", tribe[i].unk2);
 		
-        if (verbose_mode) {
-            printf("panic(%2d) ", tribe[i].panic);
-        }
+        printf("panic(%2d) ", tribe[i].panic);
 
 		print_bytes(tribe[i].unk3,sizeof (tribe[i].unk3));
 
-        if (verbose_mode) {
-		    printf("lost_pop(%02x)", tribe[i].population_loss_in_current_turn);
-        }
+		printf("lost_pop(%02x)", tribe[i].population_loss_in_current_turn);
 	    printf("\n");
 
 		if (just_this_one != -1)
@@ -1042,39 +1051,31 @@ void print_indian(const struct savegame::indian *indian, int just_this_one)
 
 	for (int i = start; i < 8; ++i) {
         printf("%-8s:",indian_list[i]);
-        if (verbose_mode) {
-            printf("capitol(%d,%d) tech(%s)", indian[i].capitol_x,indian[i].capitol_y,tech_list[indian[i].tech]);
-   		    printf("\n%9s","");
-        }
+        printf("capitol(%d,%d) tech(%s)", indian[i].capitol_x,indian[i].capitol_y,tech_list[indian[i].tech]);
+	    printf("\n%9s","");
 
         print_bytes(indian[i].unk1,sizeof(indian[i].unk1));
 		
-        if (verbose_mode) {
-		    printf("\n%9s","");
-            for (int j = 0; j < 16; ++j) {
-                printf("%s(%d) ", cargo_list[j], indian[i].tons[j]);
-            }
+        printf("\n%9s","");
+        for (int j = 0; j < 16; ++j) {
+            printf("%s(%d) ", cargo_list[j], indian[i].tons[j]);
         }
 		
         printf("\n%9s","");
         print_bytes(indian[i].unk2,sizeof(indian[i].unk2));
 
-        if (verbose_mode) {
-            printf("\n%9s","");
-            for (int j = 0; j < 4; ++j) {
-                printf("%.*s_met(%3d) ", 3,player_list[j],indian[i].met_by_player[j]);
-            }
+        printf("\n%9s","");
+        for (int j = 0; j < 4; ++j) {
+            printf("%.*s_met(%3d) ", 3,player_list[j],indian[i].met_by_player[j]);
         }
 		
 		printf("\n%9s","");
         print_bytes(indian[i].unk3,sizeof(indian[i].unk3));
 
-        if (verbose_mode) {
-            printf("\n%9s","");
-            for (int j = 0; j < 4; ++j) {
-                printf("%.*s_alarm(%3d) ", 3, player_list[j],indian[i].alarm_by_player[j]);
-                assert(indian[i].alarm_by_player[j] <= 255 );
-            }
+        printf("\n%9s","");
+        for (int j = 0; j < 4; ++j) {
+            printf("%.*s_alarm(%3d) ", 3, player_list[j],indian[i].alarm_by_player[j]);
+            assert(indian[i].alarm_by_player[j] <= 255 );
         }
         printf("\n");
 

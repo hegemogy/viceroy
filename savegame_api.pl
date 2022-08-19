@@ -68,6 +68,9 @@ sub set_json {
     if ( $items > 1 ) {
         my $iterator = ( scalar @keys == 1 ) ? 'i' : 'j';
         push @lines, "$value\[$iterator]";
+        if ( $value =~ m/name$/ ) {
+            push @lines, "$value";
+        }
     }
     else {
         push @lines, $value;
@@ -134,12 +137,21 @@ sub render_if_block {
     $label =~ s/[\[\]]/./g;
     $label =~ s/\.+/./g;
     $label =~ s/\.$//g;
-    return (  "(input.compare(\"$label\") == 0)\n"
-            . ( $INDENT x 2 )
-            . "sg->$key = new_value;" );
+    my $prefix = "(input.compare(\"$label\") == 0) {";
+    my $suffix = ( $label =~ m/name$/ )
+        ? <<ENDTEXT
+        //printf("before=%s\\n",sg->$key);
+for(int k=0;k<23;k++){
+${INDENT}${INDENT}${INDENT}sg->$key\[k]=name_value[k];
+${INDENT}${INDENT}}
+${INDENT}${INDENT}sg->$key\[23]=0;
+        //printf("after=%s\\n",sg->$key);
+ENDTEXT
+        : "sg->$key = int_value;";
+    return $prefix . "\n" . ( $INDENT x 2 ) . $suffix;
 }
 
-my $all_functions = join "\n${INDENT}else if ",
+my $all_functions = join "\n${INDENT}}\n${INDENT}else if ",
     map { render_if_block($_) } (
     map { render_merge_function( \%DATA, $_ ) } (),
     'head', 'other', 'stuff', 'tail'
@@ -153,10 +165,23 @@ path('./savegame_api.h')->spew(<<ENDTEXT);
 #include <iostream>
 #include <string>
 #include <stdio.h>
-void set_value( struct savegame *sg, std::string input, int new_value, int i, int j) {
+void set_value( struct savegame *sg, std::string input, std::string value, int i, int j) {
+    char name_value[24];
+    int int_value;
+    //printf("input=%s value=%s found=%ld\\n",input.c_str(),value.c_str(),value.find("name"));
+    if (input.find("name") != std::string::npos) {
+	    value = value.substr(0,23);
+        strcpy(name_value,value.c_str());
+        //printf("value=%s name_value=%s\\n",value.c_str(),name_value);
+    }
+    else {
+        int_value = atoi(value.c_str());
+    }
+
     if $all_functions
+    }
     else
-        fprintf(stderr,"Did not find '%s'!",input.c_str());
+        fprintf(stderr,"Did not find '%s'!\\n",input.c_str());
 }
 ENDTEXT
 exit;
