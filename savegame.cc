@@ -7,10 +7,8 @@
 #include <string.h>
 #include <regex>
 
-#include "savegame.h"
 #include "savegame_api.h"
 
-//void print_json(  const struct savegame   *sg);
 void print_head(  const struct savegame::head   *head);
 void print_player(const struct savegame::player *player,                        int just_this_one = -1);
 void print_other( const struct savegame::other  *other);
@@ -20,8 +18,8 @@ void print_nation(const struct savegame::nation *nation,                        
 void print_tribe( const struct savegame::tribe  *tribe,  uint16_t tribe_count,  int just_this_one = -1);
 void print_indian(const struct savegame::indian *indian,                        int just_this_one = -1);
 void print_stuff( const struct savegame::stuff  *stuff);
-void print_map(   const struct savegame::map    *map, int given_x, int given_y);
-void print_tail(  const uint8_t *tail, int size);
+void print_map(   const struct savegame::map    *map, int x, int y);
+void print_tail(  const uint8_t *tail);
 void print_bytes( const uint8_t *bytes,uint8_t size); 
             
 void set_value( struct savegame *sg, std::string input, std::string value, int i, int j);
@@ -40,6 +38,8 @@ void print_help(const char *prog){
 	fprintf(stderr, "-o, --other      displays other section of savegame  \n");
 	fprintf(stderr, "-s, --stuff      displays stuff section of savegame  \n");
 	fprintf(stderr, "-m, --map        displays map section of savegame    \n");
+	fprintf(stderr, "                                                     \n");
+	fprintf(stderr, "-xN / -yN        details this section of the map     \n");
 	fprintf(stderr, "                                                     \n");
 	fprintf(stderr, "If N is given, displays a single entry in the section\n");
 	fprintf(stderr, "-pN, --player=N  displays player section of savegame \n");
@@ -166,8 +166,8 @@ int main(int argc, char *argv[])
 				break;
 		}
 	}
-
-	if (optind >= argc) {
+	
+    if (optind > argc) {
 		print_help(argv[0]);
 		exit(EXIT_FAILURE);
 	}
@@ -183,30 +183,21 @@ int main(int argc, char *argv[])
 	
 		size_t res = 0;
 		res = fread(&sg.head, sizeof (struct savegame::head), 1, fp);
+		res = fread(sg.player, sizeof (savegame::player), 1, fp);
+		res = fread(&sg.other, sizeof (savegame::other), 1, fp);
 
-        sg.count.colony = sg.head.colony_count;
-        sg.count.unit   = sg.head.unit_count;
-        sg.count.tribe  = sg.head.tribe_count;
-        sg.count.indian = 8;
-        sg.count.player = 4;
-        sg.count.nation = 4;
-        sg.count.tail   = 1502;
-
-		res = fread(&sg.player, sizeof (struct savegame::player), sg.count.player, fp);
-		res = fread(&sg.other, sizeof (struct savegame::other), 1, fp);
-
-		sg.colony = (struct savegame::colony *) malloc(sizeof (struct savegame::colony) * sg.count.colony);
-		res = fread(sg.colony, sizeof (struct savegame::colony), sg.count.colony, fp);
+		sg.colony = (struct savegame::colony *) malloc(sizeof (struct savegame::colony) * sg.head.colony_count);
+		res = fread(sg.colony, sizeof (struct savegame::colony), sg.head.colony_count, fp);
 	
-		sg.unit   = (struct savegame::unit *)   malloc(sizeof (struct savegame::unit)   * sg.count.unit);
-		res = fread(sg.unit, sizeof (struct savegame::unit), sg.count.unit, fp);
+		sg.unit   = (struct savegame::unit *)   malloc(sizeof (struct savegame::unit)   * sg.head.unit_count);
+		res = fread(sg.unit, sizeof (struct savegame::unit), sg.head.unit_count, fp);
 	
-		res = fread(sg.nation, sizeof (struct savegame::nation), sg.count.nation, fp);
+		res = fread(sg.nation, sizeof (savegame::nation), 1, fp);
 	
-		sg.tribe  = (struct savegame::tribe *)  malloc(sizeof (struct savegame::tribe)  * sg.count.tribe);
-		res = fread(sg.tribe, sizeof (struct savegame::tribe), sg.count.tribe, fp);
+		sg.tribe  = (struct savegame::tribe *)  malloc(sizeof (struct savegame::tribe)  * sg.head.tribe_count);
+		res = fread(sg.tribe, sizeof (struct savegame::tribe), sg.head.tribe_count, fp);
         
-        res = fread(&sg.indian, sizeof (struct savegame::indian), sg.count.indian, fp);
+        res = fread(sg.indian, sizeof (savegame::indian), 1, fp);
 		res = fread(&sg.stuff, sizeof (struct savegame::stuff), 1, fp);
 		res = fread(&sg.map, sizeof (struct savegame::map), 1, fp);
 		res = fread(&sg.tail, sizeof (savegame::tail), 1, fp);
@@ -243,11 +234,11 @@ int main(int argc, char *argv[])
 		if (opt_stuff)
 			print_stuff(&(sg.stuff));
 	
-		if (opt_map)
+		if (opt_map || opt_x > 0 || opt_y > 0)
 			print_map(&(sg.map),opt_x,opt_y);
 	
 		if (opt_tail)
-			print_tail(sg.tail,sg.count.tail);
+			print_tail(sg.tail);
 	
 		std::string delimiter = "=";
         for (int edit_index = optind; edit_index < argc; edit_index++) {
@@ -347,16 +338,16 @@ int main(int argc, char *argv[])
         if ( optind < argc || opt_colony10 ) {
 			FILE *fop = fopen("COLONY10.SAV", "w");
 			fwrite(&sg.head, sizeof (struct savegame::head), 1, fop);
-			fwrite(&sg.player, sizeof (struct savegame::player), sg.count.player, fop);
+			fwrite(&sg.player, sizeof (savegame::player), 1, fop);
 			fwrite(&sg.other, sizeof (struct savegame::other), 1, fop);
-			fwrite(sg.colony, sizeof (struct savegame::colony), sg.count.colony, fop);
-			fwrite(sg.unit, sizeof (struct savegame::unit), sg.count.unit, fop);
-			fwrite(sg.nation, sizeof (struct savegame::nation), sg.count.nation, fop);
-			fwrite(sg.tribe, sizeof (struct savegame::tribe), sg.count.tribe, fop);
-			fwrite(sg.indian, sizeof (struct savegame::indian), sg.count.indian, fop);
+			fwrite(sg.colony, sizeof (struct savegame::colony), sg.head.colony_count, fop);
+			fwrite(sg.unit, sizeof (struct savegame::unit), sg.head.unit_count, fop);
+			fwrite(sg.nation, sizeof (savegame::nation), 1, fop);
+			fwrite(sg.tribe, sizeof (struct savegame::tribe), sg.head.tribe_count, fop);
+			fwrite(sg.indian, sizeof (savegame::indian), 1, fop);
 			fwrite(&sg.stuff, sizeof (struct savegame::stuff), 1, fop);
 			fwrite(&sg.map, sizeof (struct savegame::map), 1, fop);
-			fwrite(&sg.tail, sizeof(uint8_t), sg.count.tail, fop);
+			fwrite(&sg.tail, sizeof(savegame::tail), 1, fop);
 			fclose(fop);
 		}
 
@@ -1128,45 +1119,119 @@ void print_stuff(const struct savegame::stuff *stuff)
 	printf("Viewport: (%3d, %3d)\n", stuff->viewport_x, stuff->viewport_y);
 }
 
-void print_map(const struct savegame::map *map, int given_x, int given_y)
+void print_tile(const struct savegame::map *map, int x, int y, int row)
 {
-	printf("-- map ");
-    if (given_x != 0)
- 	    printf("x=%d ",given_x);
-    if (given_y != 0)
- 	    printf("x=%d ",given_y);
-	printf("--\n");
-    for (int i = 0; i < 4; ++i) {
-        for (int y = given_y; y < 72; ++y) {
-            for (int x = given_x; x < 58; ++x) {
-                printf("%02x",   map->layer[i][x + (y * 58)].full);//    map->layer[i][x + (y * 58)].water ? map->layer[i][x + (y * 58)].tile + 9 : map->layer[i][x + (y * 58)].tile);
-
-                //printf("%02x(%d)", map->layer[i][x + (y * 58)].full, map->layer[i][x + (y * 58)].tile);
-		        if (given_x != 0) {
-                    printf("full:%02x\n  tile:%02x\n  forest:%02x\n  water:%02x\n  phys:%02x\n",
-                            map->layer[i][x + (y * 58)].full, 
-                            map->layer[i][x + (y * 58)].tile, 
-                            map->layer[i][x + (y * 58)].forest, 
-                            map->layer[i][x + (y * 58)].water, 
-                            map->layer[i][x + (y * 58)].phys 
-                            );
-                    break;
-
-                }
-            }
-            printf("\n");
-            if (given_y != 0)
-                break;
-        }
-        printf("\n");
+    int base = map->tile[x+y*58].base;
+    int special = map->tile[x+y*58].special;
+    int forest = map->tile[x+y*58].forest;
+    int major = map->tile[x+y*58].major;
+    int hills = map->tile[x+y*58].hills;
+    int river = map->tile[x+y*58].river;
+	if (row==0){
+        printf("+---------");
     }
+	else if (row==1){
+        printf("|%2d,%2d  %2d",x,y,map->path[x+y*58].region);
+	}
+	else if (row==2){
+        printf("|%-9s", ( special ? special_name[base] : terrain_name[base] ).c_str() );
+	}
+	else if (row==3) {
+        if (hills) {
+            printf("|%-9s",(major?"mountains":"hills"));
+        }
+        else {
+            printf("|%3s%6s",(river?(major?"Mjr":"Mnr"):""),(forest&&!special?"Forest":""));
+        }
+	}
+	else if (row==4){
+        printf("%s",map->mask[x+y*58].has_unit?"|unit,":"|    ,");
+        printf("%s",map->mask[x+y*58].has_city?"city":"    ");
+    }
+    else if (row==5){
+        printf("%s",map->mask[x+y*58].road?"|road,":"|    ,");
+        printf("%s",map->mask[x+y*58].plowed?"plow":"    ");
+	}
 }
 
-void print_tail(const uint8_t *tail, int size)
+void print_map(const struct savegame::map *map, int x, int y)
+{
+    if (x != 0 && y != 0) {
+		printf("map.tile.%d.%d.full=%02x\n",x,y,map->tile[x+y*58].full);
+		printf("map.tile.%d.%d.base=%x\n",x,y,map->tile[x+y*58].base);
+		printf("map.tile.%d.%d.forest=%x\n",x,y,map->tile[x+y*58].forest);
+		printf("map.tile.%d.%d.special=%x\n",x,y,map->tile[x+y*58].special);
+		printf("map.tile.%d.%d.hills=%x\n",x,y,map->tile[x+y*58].hills);
+		printf("map.tile.%d.%d.river=%x\n",x,y,map->tile[x+y*58].river);
+		printf("map.tile.%d.%d.major=%x\n",x,y,map->tile[x+y*58].major);
+		printf("map.mask.%d.%d.full=%02x\n",x,y,map->mask[x+y*58].full);
+		printf("map.mask.%d.%d.has_unit=%x\n",x,y,map->mask[x+y*58].has_unit);
+		printf("map.mask.%d.%d.has_city=%x\n",x,y,map->mask[x+y*58].has_city);
+		printf("map.mask.%d.%d.suppress=%x (hides ocean fish and depletes minerals)\n",x,y,map->mask[x+y*58].suppress);
+		printf("map.mask.%d.%d.road=%x\n",x,y,map->mask[x+y*58].road);
+		printf("map.mask.%d.%d.purchased=%x (purchased from natives)\n",x,y,map->mask[x+y*58].purchased);
+		printf("map.mask.%d.%d.pacific=%x\n",x,y,map->mask[x+y*58].pacific);
+		printf("map.mask.%d.%d.plowed=%x\n",x,y,map->mask[x+y*58].plowed);
+		printf("map.mask.%d.%d.unused=%x\n",x,y,map->mask[x+y*58].unused);
+		printf("map.path.%d.%d.full=%02x\n",x,y,map->path[x+y*58].full);
+		printf("map.path.%d.%d.region=%x (ocean or continent id)\n",x,y,map->path[x+y*58].region);
+		printf("map.path.%d.%d.visitor=%x (nation list (0-11), 15=unvisted)\n",x,y,map->path[x+y*58].visitor);
+		printf("map.seen.%d.%d.full=%02x\n",x,y,map->seen[x+y*58].full);
+		printf("map.seen.%d.%d.score=%x (helps AI choose colony sites)\n",x,y,map->seen[x+y*58].score);
+		printf("map.seen.%d.%d.english=%x (visible to english)\n",x,y,map->seen[x+y*58].english);
+		printf("map.seen.%d.%d.french=%x (visible to french)\n",x,y,map->seen[x+y*58].french);
+		printf("map.seen.%d.%d.spanish=%x (visible to spanish)\n",x,y,map->seen[x+y*58].spanish);
+		printf("map.seen.%d.%d.dutch=%x (visible to dutch)\n",x,y,map->seen[x+y*58].dutch);
+        for (int j = y-2; j <= y+2; ++j) {
+		    for (int row = 0; row < 6; row++) {
+                for (int i = x-2; i <= x+2; ++i) {
+					print_tile(map,i,j,row);
+				}
+				printf("%s\n",(row==0?"+":"|"));
+			}
+		}
+        for (int i = x-2; i <= x+2; ++i) {
+            print_tile(map,0,0,0);
+        }
+        printf("%s\n","+");
+    } 
+    else {
+ 	    printf("-- map.tile\n");
+        for (y = 0; y < 72; ++y) {
+            for (x = 0; x < 58; ++x) {
+                printf("%02x",   map->tile[x + (y * 58)].full);
+            }
+            printf("\n");
+        }
+ 	    printf("-- map.mask\n");
+        for (y = 0; y < 72; ++y) {
+            for (x = 0; x < 58; ++x) {
+                printf("%02x",   map->mask[x + (y * 58)].full);
+            }
+            printf("\n");
+        }
+ 	    printf("-- map.path\n");
+        for (y = 0; y < 72; ++y) {
+            for (x = 0; x < 58; ++x) {
+                printf("%02x",   map->path[x + (y * 58)].full);
+            }
+            printf("\n");
+        }
+ 	    printf("-- map.seen\n");
+        for (y = 0; y < 72; ++y) {
+            for (x = 0; x < 58; ++x) {
+                printf("%02x",   map->seen[x + (y * 58)].full);
+            }
+            printf("\n");
+        }
+}
+}
+
+void print_tail(const uint8_t *tail)
 {
 	printf("-- tail --\n");
 
-	for (int i = 0; i < size; ++i) {
+	for (int i = 0; i < sizeof(tail); ++i) {
 		if (i % 20 == 0)
 			printf("\n");
 		printf("%02x ", tail[i]);

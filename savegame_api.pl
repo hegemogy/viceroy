@@ -10,20 +10,19 @@ our $INDENT = " " x 4;
 my @lines;
 {
     my $content = path('savegame.h')->slurp;
-    my $close   = '} __attribute__ ((packed));';
-    $content =~ s/[\s\S]+struct savegame \{.*([\s\S]+)\Q$close\E/$1/;
-    $content = simplify_map($content);
-    @lines   = grep m/\S/, split "\n", $content;
+    my $close   = '} __attribute__ ((packed)) savegame;';
+    $content =~ s/[\s\S]+struct savegame \{.*([\s\S]+)\Q$close\E[\s\S]+/$1/;
+
+    @lines = grep m/\S/, split "\n", $content;
 }
 my @id = ();
 my %DATA;
+my %ITERATIONS;
 my $ORDER;
-my $leading;
 foreach my $line (@lines) {
+
+    # skip comments
     if ( $line =~ m|^\s*//.*| ) {
-        $leading = $line;
-        $leading =~ s/^\s+//;
-        $leading =~ s/\s+$//;
         next;
     }
     my $id_string = ( join '.', @id );
@@ -35,24 +34,88 @@ foreach my $line (@lines) {
     my ( $chunk, $name, $suffix, $hints ) = get_chunk($line);
     if ($chunk) {
         my $bits = get_bits( $chunk, $suffix );
-        if ($leading) {
-            $hints   = "$leading,$hints";
-            $leading = '';
-        }
         $hints =~ s/\n//g;
+        $hints =~ s/(\/\/|\/\*|\*\/)//g;
+        $hints =~ s/^\s+//g;
+        $hints =~ s/\s+$//g;
         set_data( \%DATA, $bits, $hints, @id, $name );
         next;
     }
-    if ( is_return($line) ) {
-        pop @id;
+    my $iterations = get_iterations($line);
+    if ($iterations) {
+        my $id = pop @id;
+        die "Can't set iterations for '$id' because it is not unique!"
+            if defined $ITERATIONS{$id};
+        $ITERATIONS{$id} = $iterations;
+        next;
+    }
+
+    # skip unnamed structs/unions, openings and closings
+    if (   $line =~ m/(union|struct) \{/
+        || $line =~ m/\Q__attribute__ ((packed));\E/ )
+    {
         next;
     }
     die "DATA: "
-        . Dumper( \%DATA )
+
+        #. Dumper( \%DATA )
         . "line[$line] id[$id_string]\nERROR: Could not auto-generate from this line!";
 }
 
-#die Dumper( \%DATA );
+#die Dumper( %ITERATIONS );
+#die Dumper( $DATA{map} );
+sub drill {
+    my ( $data, @keys ) = @_;
+    my @return;
+    if ( $data->{bits} ) {
+        $data->{keys} = \@keys;
+        push @return, $data;
+    }
+    else {
+        foreach my $key ( keys %{$data} ) {
+            push @return, drill( $data->{$key}, @keys, $key );
+        }
+    }
+    return @return;
+}
+use Storable qw(dclone);
+
+sub printer {
+    my ( $line, $style ) = @_;
+    die "Expects a line and a style!" if !$line || !$style;
+    my ( $keys, $hints, $order, $bits )
+        = map { $line->{$_} // die "expected \$line->$_!" } 'keys', 'hints',
+        'order', 'bits';
+    my ( $type, $array_items, $total )
+        = map { $bits->{$_} // die "expected \$line->bits->$_!" } 'type',
+        'array_items', 'total';
+    if ( $style eq 'standard' ) {
+        my $label;
+        foreach my $key ( @{$keys} ) {
+            $label = join '.', grep {defined} $label, $key;
+            my $iterations = $ITERATIONS{$key};
+            $label .= "[$iterations]" if $iterations && $iterations ne '1';
+        }
+        $label .= "[$array_items]" if $array_items > 1;
+
+        print "[$order] $label $type ($total) $hints\n";
+    }
+    elsif ( $style eq 'map' ) {
+        if ( $keys->[0] eq 'map' ) {
+            my $digits      = $total > 4 ? '02'        : '';
+            my $description = $hints     ? " ($hints)" : '';
+            my ( $map, $layer, $last ) = @{$keys};
+            print
+                "printf(\"map.$layer.%d.%d.$last=%${digits}x$description\\n\",x,y,map->$layer\[x+y*58].$last);\n";
+        }
+    }
+    else {
+        die "Style '$style' not supported!";
+    }
+}
+my @drilled = drill( dclone \%DATA );
+
+#printer($_) foreach sort { $a->{order} <=> $b->{order} } @drilled;
 
 sub set_json {
     my ( $bits, @keys ) = @_;
@@ -117,7 +180,18 @@ sub set_json_section {
 sub render_merge_function {
     my ( $data, $section ) = @_;
     my @lines = set_json_section( $data, $section );
-    return @lines;
+    my @return;
+    foreach my $line (@lines) {
+        if ( $line =~ m/^map\./ ) {
+            next if $line =~ m/base/;    # we do this one manually
+            my @parts = split m/\./, $line;
+            my $last  = pop @parts;
+            $line = join '.', @parts;
+            $line .= "[i][j].$last";
+        }
+        push @return, $line;
+    }
+    return @return;
 }
 
 sub render_merge_list_function {
@@ -137,41 +211,44 @@ sub render_if_block {
     $label =~ s/[\[\]]/./g;
     $label =~ s/\.+/./g;
     $label =~ s/\.$//g;
+    $key   =~ s/i\]\[j/i+j*58/;
     my $prefix = "(input.compare(\"$label\") == 0) {";
     my $suffix = ( $label =~ m/name$/ )
         ? <<ENDTEXT
-        //printf("before=%s\\n",sg->$key);
 for(int k=0;k<23;k++){
 ${INDENT}${INDENT}${INDENT}sg->$key\[k]=name_value[k];
 ${INDENT}${INDENT}}
 ${INDENT}${INDENT}sg->$key\[23]=0;
-        //printf("after=%s\\n",sg->$key);
 ENDTEXT
-        : "sg->$key = int_value;";
+        : "sg->$key = int_value;\n";
     return $prefix . "\n" . ( $INDENT x 2 ) . $suffix;
 }
 
-my $all_functions = join "\n${INDENT}}\n${INDENT}else if ",
+my $all_functions = join "${INDENT}}\n${INDENT}else if ",
     map { render_if_block($_) } (
     map { render_merge_function( \%DATA, $_ ) } (),
-    'head', 'other', 'stuff', 'tail'
+
+    'head', 'other', 'stuff', 'tail',
+    'map'
     ),
     (
     map { render_merge_list_function( \%DATA, $_ ) } (),
 
     'player', 'nation', 'indian', 'colony', 'unit', 'tribe',
     );
+
 path('./savegame_api.h')->spew(<<ENDTEXT);
 #include <iostream>
 #include <string>
 #include <stdio.h>
+#include <savegame.h>
+
 void set_value( struct savegame *sg, std::string input, std::string value, int i, int j) {
     char name_value[24];
     int int_value;
     //printf("input=%s value=%s found=%ld\\n",input.c_str(),value.c_str(),value.find("name"));
-    if (input.find("name") != std::string::npos) {
-	    value = value.substr(0,23);
-        strcpy(name_value,value.c_str());
+    if (input.find("name") != std::string::npos && j < 0 ) {
+        strcpy(name_value,value.substr(0,23).c_str());
         //printf("value=%s name_value=%s\\n",value.c_str(),name_value);
     }
     else {
@@ -180,6 +257,25 @@ void set_value( struct savegame *sg, std::string input, std::string value, int i
 
     if $all_functions
     }
+    else if (input.compare("map.tile.i.j.base") == 0 ) {
+        std::map<std::string, int>::iterator base = terrain_id.find(value);
+        if (base != terrain_id.end()) {
+            sg->map.tile[i+j*58].base = terrain_id[value];
+            sg->map.tile[i+j*58].special = 0;
+        }
+        else {
+            base = special_id.find(value);
+            if (base != special_id.end()) {
+                sg->map.tile[i+j*58].base = special_id[value];
+                sg->map.tile[i+j*58].forest = 1;
+                sg->map.tile[i+j*58].special = 1;
+            }
+            else {
+                fprintf(stderr,"'%s' is not a valid terrain!",value.c_str());
+                exit(EXIT_FAILURE);
+            }
+        }
+	}
     else
         fprintf(stderr,"Did not find '%s'!\\n",input.c_str());
 }
@@ -209,10 +305,10 @@ sub set_data {
 }
 
 sub get_struct {
-    my ($line)   = @_;
-    my $match    = '.*struct\s+(\S+)\s+\{.*';
-    my ($struct) = ( $line =~ m/$match/ );
-    return $struct;
+    my ($line) = @_;
+    my $match = '.*(struct|union)\s+(\S+)\s+\{.*';
+    my ( $type, $name ) = ( $line =~ m/$match/ );
+    return $name;
 }
 
 sub get_chunk {
@@ -250,18 +346,10 @@ sub get_bits {
     };
 }
 
-sub is_return {
+sub get_iterations {
     my ($line) = @_;
     my $match = '__attribute__ ((packed))';
-    return ( $line =~ m/\Q$match\E/ ) ? 1 : 0;
-}
-
-sub simplify_map {
-    my ($content) = @_;
-    my $start     = 'struct map {';
-    my $end       = '} __attribute__ ((packed)) map;';
-    my $replace   = 'uint8_t map[4176];';
-    $content =~ s/\Q$start\E[\s\S]*\Q$end\E/$replace/;
-    die "Unable to simplify map section!" if $content !~ m/\Q$replace\E/;
-    return $content;
+    my ( $infinite, $name, $items )
+        = ( $line =~ m/\Q$match\E (\*)?([a-z0-9_]+)\[?([0-9\*]+)?\]?;/ );
+    return $infinite // $items // ( $name ? 1 : 0 );
 }

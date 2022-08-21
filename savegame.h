@@ -157,16 +157,6 @@ static const char *tech_list[] = {
 
 struct savegame {
     
-    struct count {
-        uint16_t colony;
-        uint16_t unit;
-        uint16_t tribe;
-        uint16_t player;
-        uint16_t nation;
-        uint16_t indian;
-        uint16_t tail;
-	} __attribute__ ((packed)) count;
-    
 	struct head {
 		char sig_colonize[9];
 		uint8_t unk0[ 3];
@@ -466,18 +456,78 @@ struct savegame {
 	} __attribute__ ((packed)) stuff;
 
 	// 56*70 visible + border, = 58*72 = 4176
-	struct map { /* 58 x 72 ... (visible 56 x 70) */
-		union {
-			struct {
-				uint8_t tile : 3;
-				uint8_t forest : 1;
-				uint8_t water : 1;
-				uint8_t phys : 3;
-			} __attribute__ ((packed));
+    // 58 x 72 ... (visible 56 x 70)
+
+	struct map {
+		union tile {
 			uint8_t full;
-		} __attribute__ ((packed))  layer[4][58*72];
+			struct {
+				uint8_t base : 3;
+				uint8_t forest : 1;
+				uint8_t special : 1;
+				uint8_t hills : 1;
+				uint8_t river : 1;
+				uint8_t major : 1;
+			} __attribute__ ((packed));
+		} __attribute__ ((packed)) tile[58*72];
+		union mask {
+			uint8_t full;
+			struct {
+				uint8_t has_unit : 1;
+				uint8_t has_city : 1;
+				uint8_t suppress : 1; // hides ocean fish and depletes minerals
+				uint8_t road : 1;
+				uint8_t purchased : 1; // purchased from natives
+				uint8_t pacific : 1;
+				uint8_t plowed : 1;
+				uint8_t unused : 1;
+			} __attribute__ ((packed));
+		} __attribute__ ((packed)) mask[58*72];
+		union path {
+			uint8_t full;
+			struct {
+				uint8_t region : 4;  // ocean or continent id
+				uint8_t visitor : 4; // nation list (0-11), 15=unvisted
+			} __attribute__ ((packed));
+		} __attribute__ ((packed)) path[58*72];
+		union seen {
+			uint8_t full;
+			struct {
+				uint8_t score : 4; // helps AI choose colony sites
+				uint8_t english : 1; // visible to english
+				uint8_t french : 1; // visible to french
+				uint8_t spanish : 1; // visible to spanish
+				uint8_t dutch : 1; // visible to dutch
+			} __attribute__ ((packed));
+		} __attribute__ ((packed)) seen[58*72];
 	} __attribute__ ((packed)) map;
 
 	uint8_t tail[1502];
 
-} __attribute__ ((packed));
+} __attribute__ ((packed)) savegame;
+
+/// Given a map from keys to values, creates a new map from values to keys 
+template<typename K, typename V>
+static std::map<V, K> reverse_map(const std::map<K, V> &original) {
+    std::map<V, K> reversed;
+	for (const auto &pair : original)
+		reversed[pair.second] = pair.first;
+	return reversed;
+}
+static std::map<std::string, int> terrain_id {
+    {"tundra", 0},
+    {"desert", 1},
+    {"plains", 2},
+    {"prairie", 3},
+    {"grassland", 4},
+    {"savannah", 5},
+    {"swamp", 6},
+    {"marsh", 7},
+};
+static std::map<int, std::string> terrain_name = reverse_map(terrain_id);
+static std::map<std::string, int> special_id {
+    {"arctic", 0},
+    {"ocean", 1},
+    {"seas", 2},
+};
+static std::map<int, std::string> special_name = reverse_map(special_id);
