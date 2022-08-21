@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
 			sg.nation[player_nation].gold = 4000000;
 
 			for (int i = 0; i < sg.head.colony_count; ++i) {
-				if (sg.colony[i].nation == player_nation) {
+				if (sg.colony[i].nation_id == player_nation) {
 
 					for (int j = 0; j < 32; ++j) {
 						switch (j) {
@@ -571,7 +571,7 @@ void print_colony(const struct savegame::colony *colony, uint16_t colony_count, 
 	int start = (just_this_one == -1) ? 0 : just_this_one;
 
 	for (int i = start; i < colony_count; ++i) {
-		if ( colony[i].nation != 3) /* Skip all non-dutch */
+		if ( colony[i].nation_id != 3) /* Skip all non-dutch */
 			continue;
 
 		printf("[%3d] (%3d, %3d): %2d %s\n", i, colony[i].x, colony[i].y, colony[i].population, colony[i].name);
@@ -841,7 +841,7 @@ void print_unit(  const struct savegame::unit   *unit,   uint16_t unit_count, in
 	for (int i = start; i < unit_count; ++i) {
 		printf("[%3d] (%3d, %3d): %-19s ", i, unit[i].x, unit[i].y, unit_type_list[unit[i].type]);
 
-		printf("%-11s ", nation_list[unit[i].nation] );
+		printf("%-11s ", nation_list[unit[i].nation_id] );
 		printf("m:%02x ", unit[i].moves);
 
 		printf("tw:%d ", unit[i].turns_worked);
@@ -1002,7 +1002,7 @@ void print_tribe(const struct savegame::tribe  *tribe,  uint16_t tribe_count, in
 	int start = (just_this_one == -1) ? 0 : just_this_one;
 
 	for (int i = start; i < tribe_count; ++i) {
-		printf("[%3d] (%3d, %3d):%-8s:", i, tribe[i].x, tribe[i].y, nation_list[tribe[i].nation]);
+		printf("[%3d] (%3d, %3d):%-8s:", i, tribe[i].x, tribe[i].y, nation_list[tribe[i].nation_id]);
         printf("pop(%2d) artillery(%d) learned(%d) capital(%d) scouted(%d) %d %d %d %d, ",
             tribe[i].population, 
             tribe[i].state.artillery, tribe[i].state.learned, tribe[i].state.capital, tribe[i].state.scouted,

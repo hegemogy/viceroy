@@ -19,6 +19,8 @@ my @id = ();
 my %DATA;
 my %ITERATIONS;
 my $ORDER;
+my @RESERVED = ( 'keys', 'hints', 'order', 'data_type', 'items', 'total' );
+my %RESERVED = ( map { $_ => 1 } @RESERVED );
 foreach my $line (@lines) {
 
     # skip comments
@@ -31,14 +33,14 @@ foreach my $line (@lines) {
         push @id, $struct;
         next;
     }
-    my ( $chunk, $name, $suffix, $hints ) = get_chunk($line);
-    if ($chunk) {
-        my $bits = get_bits( $chunk, $suffix );
+    my ( $type, $name, $suffix, $hints ) = get_chunk($line);
+    if ($type) {
+        my ( $total, $items ) = get_bits( $type, $suffix );
         $hints =~ s/\n//g;
         $hints =~ s/(\/\/|\/\*|\*\/)//g;
         $hints =~ s/^\s+//g;
         $hints =~ s/\s+$//g;
-        set_data( \%DATA, $bits, $hints, @id, $name );
+        set_data( \%DATA, $type, $total, $items, $hints, @id, $name );
         next;
     }
     my $iterations = get_iterations($line);
@@ -56,10 +58,7 @@ foreach my $line (@lines) {
     {
         next;
     }
-    die "DATA: "
-
-        #. Dumper( \%DATA )
-        . "line[$line] id[$id_string]\nERROR: Could not auto-generate from this line!";
+    die "PARSE ERROR: line[$line] id[$id_string]\n";
 }
 
 #die Dumper( %ITERATIONS );
@@ -67,7 +66,7 @@ foreach my $line (@lines) {
 sub drill {
     my ( $data, @keys ) = @_;
     my @return;
-    if ( $data->{bits} ) {
+    if ( $data->{order} ) {
         $data->{keys} = \@keys;
         push @return, $data;
     }
@@ -82,160 +81,68 @@ use Storable qw(dclone);
 
 sub printer {
     my ( $line, $style ) = @_;
+    die Dumper($line) if $line->{keys}->[-1] eq 'nation';
     die "Expects a line and a style!" if !$line || !$style;
-    my ( $keys, $hints, $order, $bits )
-        = map { $line->{$_} // die "expected \$line->$_!" } 'keys', 'hints',
-        'order', 'bits';
-    my ( $type, $array_items, $total )
-        = map { $bits->{$_} // die "expected \$line->bits->$_!" } 'type',
-        'array_items', 'total';
-    if ( $style eq 'standard' ) {
-        my $label;
-        foreach my $key ( @{$keys} ) {
-            $label = join '.', grep {defined} $label, $key;
-            my $iterations = $ITERATIONS{$key};
-            $label .= "[$iterations]" if $iterations && $iterations ne '1';
-        }
-        $label .= "[$array_items]" if $array_items > 1;
+    my ( $keys, $hints, $order, $type, $items, $total )
+        = map { $line->{$_} // die "expected \$line->$_! " . Dumper($line) }
+        @RESERVED;
+    my $label;
+    foreach my $key ( @{$keys} ) {
+        $label = join '.', grep {defined} $label, $key;
+        my $iterations = $ITERATIONS{$key};
+        $label .= "[$iterations]" if $iterations && $iterations ne '1';
+    }
+    $label .= "[$items]" if $items > 1;
 
-        print "[$order] $label $type ($total) $hints\n";
+    my $set_label = $label;
+    $set_label =~ s/\*/][/;
+    $set_label =~ s/(\[\d+|\[\]\[)/[i/;
+    $set_label =~ s/\d+\]/j]/;
+
+    my $set_key = $set_label;
+    $set_key =~ s/i\]\[j/i+j*58/;
+    $set_key = "sg->$set_key";
+
+    my @return;
+    if ( $style eq 'standard' ) {
+        push @return, "[$order] $label $type ($total) $hints\n";
     }
     elsif ( $style eq 'map' ) {
         if ( $keys->[0] eq 'map' ) {
             my $digits      = $total > 4 ? '02'        : '';
             my $description = $hints     ? " ($hints)" : '';
             my ( $map, $layer, $last ) = @{$keys};
-            print
+            push @return,
                 "printf(\"map.$layer.%d.%d.$last=%${digits}x$description\\n\",x,y,map->$layer\[x+y*58].$last);\n";
+        }
+    }
+    elsif ( $style eq 'if_block' ) {
+        $set_label =~ s/[\[\]]/./g;
+        $set_label =~ s/\.+/./g;
+        $set_label =~ s/\.$//g;
+        push @return, <<ENDTEXT;
+if (input.compare(\"$set_label\") == 0) {
+        $set_key = int_value;
+ENDTEXT
+        if ( $type eq 'char' ) {
+            $set_label =~ s/\.\D$//;
+            $set_key   =~ s/\[\D\]$//;
+            push @return, <<ENDTEXT;
+if (input.compare(\"$set_label\") == 0) {
+        strcpy($set_key,value.substr(0,$items).c_str());
+ENDTEXT
         }
     }
     else {
         die "Style '$style' not supported!";
     }
-}
-my @drilled = drill( dclone \%DATA );
-
-#printer($_) foreach sort { $a->{order} <=> $b->{order} } @drilled;
-
-sub set_json {
-    my ( $bits, @keys ) = @_;
-
-    my $key_string = join '.', @keys;
-    my $value      = "$key_string";
-
-    my ( $total, $type, $items )
-        = map { $bits->{$_} // die "Expected '$_'!" } 'total', 'type',
-        'array_items';
-
-    my @lines;
-    if ( $items > 1 ) {
-        my $iterator = ( scalar @keys == 1 ) ? 'i' : 'j';
-        push @lines, "$value\[$iterator]";
-        if ( $value =~ m/name$/ ) {
-            push @lines, "$value";
-        }
-    }
-    else {
-        push @lines, $value;
-    }
-    return @lines;
-}
-
-sub set_json_section {
-    my ( $data, $section ) = @_;
-    my @lines;
-    my $base      = $data->{$section};
-    my $base_bits = $base->{bits};
-    if ($base_bits) {
-        push @lines, set_json( $base_bits, $section );
-    }
-    else {
-        foreach my $key ( sort keys %{ $data->{$section} } ) {
-            die Dumper( $data->{$section} ) if $key eq 'bits';
-            my $value = $data->{$section}->{$key};
-            my $bits  = $value->{bits};
-            if ($bits) {
-                push @lines, set_json( $bits, $section, $key );
-            }
-            else {
-                foreach my $sub_key ( sort keys %{$value} ) {
-                    die Dumper( $value, $sub_key ) if !ref $value->{$sub_key};
-                    my $sub_value = $value->{$sub_key};
-                    my $sub_bits  = $sub_value->{bits};
-                    if ($sub_bits) {
-                        push @lines,
-                            set_json( $sub_bits, $section, $key, $sub_key );
-                    }
-                    else {
-                        print "RECURSE key=$key sub_key=$sub_key subvalue="
-                            . Dumper($sub_value);
-                    }
-                }
-            }
-        }
-    }
-    return @lines;
-}
-
-sub render_merge_function {
-    my ( $data, $section ) = @_;
-    my @lines = set_json_section( $data, $section );
-    my @return;
-    foreach my $line (@lines) {
-        if ( $line =~ m/^map\./ ) {
-            next if $line =~ m/base/;    # we do this one manually
-            my @parts = split m/\./, $line;
-            my $last  = pop @parts;
-            $line = join '.', @parts;
-            $line .= "[i][j].$last";
-        }
-        push @return, $line;
-    }
     return @return;
 }
-
-sub render_merge_list_function {
-    my ( $data, $section ) = @_;
-    my @lines = set_json_section( $data, $section );
-    my @loop_lines;
-    foreach my $line (@lines) {
-        $line =~ s/$section\./$section\[i\]./g;
-        push @loop_lines, $line;
-    }
-    return @loop_lines;
-}
-
-sub render_if_block {
-    my ($key) = @_;
-    my $label = $key;
-    $label =~ s/[\[\]]/./g;
-    $label =~ s/\.+/./g;
-    $label =~ s/\.$//g;
-    $key   =~ s/i\]\[j/i+j*58/;
-    my $prefix = "(input.compare(\"$label\") == 0) {";
-    my $suffix = ( $label =~ m/name$/ )
-        ? <<ENDTEXT
-for(int k=0;k<23;k++){
-${INDENT}${INDENT}${INDENT}sg->$key\[k]=name_value[k];
-${INDENT}${INDENT}}
-${INDENT}${INDENT}sg->$key\[23]=0;
-ENDTEXT
-        : "sg->$key = int_value;\n";
-    return $prefix . "\n" . ( $INDENT x 2 ) . $suffix;
-}
-
-my $all_functions = join "${INDENT}}\n${INDENT}else if ",
-    map { render_if_block($_) } (
-    map { render_merge_function( \%DATA, $_ ) } (),
-
-    'head', 'other', 'stuff', 'tail',
-    'map'
-    ),
-    (
-    map { render_merge_list_function( \%DATA, $_ ) } (),
-
-    'player', 'nation', 'indian', 'colony', 'unit', 'tribe',
-    );
+my @drilled   = drill( dclone \%DATA );
+my $if_blocks = join "${INDENT}}\n${INDENT}else ",
+    map  { printer( dclone $_, 'if_block' ) }
+    sort { $a->{order} <=> $b->{order} }
+    grep { $_->{keys}->[-1] ne 'base' } @drilled;
 
 path('./savegame_api.h')->spew(<<ENDTEXT);
 #include <iostream>
@@ -244,18 +151,9 @@ path('./savegame_api.h')->spew(<<ENDTEXT);
 #include <savegame.h>
 
 void set_value( struct savegame *sg, std::string input, std::string value, int i, int j) {
-    char name_value[24];
-    int int_value;
-    //printf("input=%s value=%s found=%ld\\n",input.c_str(),value.c_str(),value.find("name"));
-    if (input.find("name") != std::string::npos && j < 0 ) {
-        strcpy(name_value,value.substr(0,23).c_str());
-        //printf("value=%s name_value=%s\\n",value.c_str(),name_value);
-    }
-    else {
-        int_value = atoi(value.c_str());
-    }
-
-    if $all_functions
+    int int_value = atoi(value.c_str());
+    
+    $if_blocks
     }
     else if (input.compare("map.tile.i.j.base") == 0 ) {
         std::map<std::string, int>::iterator base = terrain_id.find(value);
@@ -283,25 +181,31 @@ ENDTEXT
 exit;
 
 sub set_data {
-    my ( $hash, $bits, $hints, @id ) = @_;
-    my $last   = pop @id;
-    my $so_far = '';
+    my ( $hash, $type, $total, $items, $hints, @id ) = @_;
+    die "$_ is reserved!" foreach grep { $RESERVED{$_} } @id;
+    my $last = pop @id;
     foreach my $part (@id) {
-        $so_far .= '.' if $so_far;
-        $so_far .= $part;
         $hash->{$part} //= {};
         $hash = $hash->{$part};
     }
     my $exists = $hash->{$last};
-    die "$so_far.$last already exists: " . Dumper($exists) if $exists;
+    die "" . ( join '.', @id, $last ) . " already exists: " . Dumper($exists)
+        if $exists;
     $ORDER++;
 
     #print "Setting $so_far.$last, order=$ORDER bytes=$bytes hints=$hints\n";
     $hash->{$last} = {
-        order => $ORDER,
-        bits  => $bits,
-        hints => $hints,
+        keys      => \@id,
+        order     => $ORDER,
+        data_type => $type,
+        items     => $items,
+        total     => $total,
+        hints     => $hints,
     };
+    while ( my ( $key, $value ) = each %{ $hash->{$last} } ) {
+        die "'$key' is a reference!" . Dumper( $key, $value )
+            if ref $value && $key ne 'keys';
+    }
 }
 
 sub get_struct {
@@ -325,12 +229,12 @@ sub get_bits {
     my ($total) = ( $type =~ m/(\d+)/ );
     $total //= 8;    # e.g. char
 
-    my $array_items = 0;
+    my $items = 0;
     if ($suffix) {
         my ($digits) = ( $suffix =~ m/(\d+)/ );
         if ( $suffix =~ m/\[/ ) {
-            $array_items = $digits;
-            $total       = $total * $array_items;
+            $items = $digits;
+            $total = $total * $items;
         }
         elsif ( $suffix =~ m/:/ ) {
             $total = $digits;    # bitwise (less than 8)
@@ -339,11 +243,7 @@ sub get_bits {
             die "Unable to parse suffix=$suffix for type=$type!";
         }
     }
-    return {
-        type        => $type,
-        total       => $total,
-        array_items => $array_items,
-    };
+    return ( $total, $items );
 }
 
 sub get_iterations {

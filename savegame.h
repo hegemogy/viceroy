@@ -282,7 +282,7 @@ struct savegame {
 		uint8_t x;
 		uint8_t y;
 		char name[24];
-		uint8_t nation;
+		uint8_t nation_id;
 		uint8_t unk0[ 4];
 		uint8_t population;
 		uint8_t occupation[32];
@@ -348,13 +348,13 @@ struct savegame {
 		uint8_t x;
 		uint8_t y;
 		uint8_t type;
-		uint8_t nation : 4; /* likely to be owner of unit, eng, fra, spa, dut, indian tribes, etc. */
+		uint8_t nation_id : 4; /* likely to be owner of unit, eng, fra, spa, dut, indian tribes, etc. */
 		uint8_t unk04 : 4;
 		uint8_t unk05;
 		uint8_t moves; /* Accumulated moves (3 between land, 1 on roads, etc.) */
 		uint8_t unk06;
 		uint8_t unk07;
-		uint8_t order; enum { PLOW = 8, ROAD = 9 };
+		uint8_t orders; enum { PLOW = 8, ROAD = 9 };
 
 		uint8_t unk08[ 3];
 		uint8_t holds_occupied;
@@ -408,7 +408,7 @@ struct savegame {
 	struct tribe {
 		uint8_t x;
 		uint8_t y;
-		uint8_t nation;
+		uint8_t nation_id;
 		struct state {
 			uint8_t artillery : 1; //artillery has been nearby?
 			uint8_t learned   : 1; //visited and learned skill
@@ -487,7 +487,7 @@ struct savegame {
 			uint8_t full;
 			struct {
 				uint8_t region : 4;  // ocean or continent id
-				uint8_t visitor : 4; // nation list (0-11), 15=unvisted
+				uint8_t visitor : 4; // nation id (0-11), 15=unvisted
 			} __attribute__ ((packed));
 		} __attribute__ ((packed)) path[58*72];
 		union seen {
