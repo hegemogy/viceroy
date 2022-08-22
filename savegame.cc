@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 
 		struct savegame sg;
 
-		FILE *fp = fopen(opt_file, "r");	
+		FILE *fp = fopen(opt_file, "rb");	
 
 		if (fp == NULL) {
 			printf("Could not open file: %s\n", opt_file);
@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
         }
 		
         if ( optind < argc || opt_colony10 ) {
-			FILE *fop = fopen("COLONY10.SAV", "w");
+			FILE *fop = fopen("COLONY10.SAV", "wb");
 			fwrite(&sg.head, sizeof (struct savegame::head), 1, fop);
 			fwrite(&sg.player, sizeof (savegame::player), 1, fop);
 			fwrite(&sg.other, sizeof (struct savegame::other), 1, fop);
