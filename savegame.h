@@ -1,5 +1,33 @@
 #include <stdint.h>
 
+/// Given a map from keys to values, creates a new map from values to keys 
+template<typename K, typename V>
+static std::map<V, K> reverse_map(const std::map<K, V> &original) {
+    std::map<V, K> reversed;
+	for (const auto &pair : original)
+		reversed[pair.second] = pair.first;
+	return reversed;
+}
+
+static std::map<std::string, int> terrain_id {
+    {"tundra", 0},
+    {"desert", 1},
+    {"plains", 2},
+    {"prairie", 3},
+    {"grassland", 4},
+    {"savannah", 5},
+    {"swamp", 6},
+    {"marsh", 7},
+};
+static std::map<int, std::string> terrain_name = reverse_map(terrain_id);
+
+static std::map<std::string, int> special_id {
+    {"arctic", 0},
+    {"ocean", 1},
+    {"seas", 2},
+};
+static std::map<int, std::string> special_name = reverse_map(special_id);
+
 static const char *unit_type_list[] {
 	/*  0 */ "Colonist",
 	/*  1 */ "Soldier",
@@ -93,24 +121,26 @@ static const char *indian_list[] = {
     nation_list[11],
 };
 
-static const char *cargo_list[] = {
-	/*  0 */ "Food",
-	/*  1 */ "Sugar",
-	/*  2 */ "Tobacco",
-	/*  3 */ "Cotton",
-	/*  4 */ "Furs",
-	/*  5 */ "Lumber",
-	/*  6 */ "Ore",
-	/*  7 */ "Silver",
-	/*  8 */ "Horses",
-	/*  9 */ "Rum",
-	/* 10 */ "Cigars",
-	/* 11 */ "Cloth",
-	/* 12 */ "Coats",
-	/* 13 */ "Trade goods",
-	/* 14 */ "Tools",
-	/* 15 */ "Muskets",
+static std::map<const char*, int> cargo_id {
+    {"food",      0},
+    {"sugar",     1},
+    {"tobacco",   2},
+    {"cotton",    3},
+    {"furs",      4},
+    {"lumber",    5},
+    {"ore",       6},
+    {"silver",    7},
+    {"horses",    8},
+    {"rum",       9},
+    {"cigars",   10},
+    {"cloth",    11},
+    {"coats",    12},
+    {"goods",    13},
+    {"tools",    14},
+    {"muskets",  15},
+    {"none",    255},
 };
+static std::map<int, const char*> cargo_name = reverse_map(cargo_id);
 
 static const char *founding_father_list[] = {
 	"Adam Smith",
@@ -155,35 +185,52 @@ static const char *tech_list[] = {
 	"Civilized",
 };
 
+static std::map<const char*, int> order_id {
+    {"none",      0},
+    {"sentry",    1},
+    {"trading",   2},
+    {"goto",      3},
+
+    {"fortified", 5},
+    {"fortify",   6},
+
+    {"plow",      8},
+    {"road",      9},
+
+    {"unknownb",  11},
+    {"unknownc",  12},
+};
+static std::map<int, const char*> order_name = reverse_map(order_id);
+
 struct savegame {
     
 	struct head {
 		char sig_colonize[9];
-		uint8_t unk0[ 3];
+		uint8_t unknown00[ 3];
 		uint16_t map_size_x;
 		uint16_t map_size_y;
 		struct tut1 {
 			uint8_t nr13  : 1;
 			uint8_t nr14  : 1;
-			uint8_t unk3  : 1;
+			uint8_t unknown01 : 1;
 			uint8_t nr15  : 1;
 			uint8_t nr16  : 1;
 			uint8_t nr17  : 1;
-			uint8_t unk7  : 1;
+			uint8_t unknown02  : 1;
 			uint8_t nr19  : 1;
 		} __attribute__ ((packed)) tut1;
 
-		uint8_t unk1;
+		uint8_t unknown03;
 
 		struct game_options {
-			uint16_t unknown7           : 7;
+			uint16_t unused01           : 7;
 			uint16_t tutorial_hints     : 1;
 			uint16_t water_color_cycling: 1;
 			uint16_t combat_analysis    : 1;
 			uint16_t autosave           : 1;
 			uint16_t end_of_turn        : 1;
 			uint16_t fast_piece_slide   : 1;
-			uint16_t unknown            : 1;
+			uint16_t unused02           : 1;
 			uint16_t show_foreign_moves : 1;
 			uint16_t show_indian_moves  : 1;
 		} __attribute__ ((packed)) game_options;
@@ -199,7 +246,7 @@ struct savegame {
 			uint16_t report_when_colonists_trained      : 1;
 			uint16_t report_sons_of_liberty_membership  : 1;
 			uint16_t report_rebel_majorities            : 1;
-			uint16_t unused                             : 6;
+			uint16_t unused03                           : 6;
 		} __attribute__ ((packed)) colony_report_options;
 
 		struct tut2 {
@@ -208,7 +255,7 @@ struct savegame {
 			uint8_t event_music      : 1;
 			uint8_t sound_effects    : 1;
 			uint8_t nr1 : 1; // shown immediately on game-start
-			uint8_t nr2 : 1; // probably not used, also triggers event_discovery_of_the_new_world
+			uint8_t unused04 : 1; // probably not used, also triggers event_discovery_of_the_new_world
 			uint8_t nr3 : 1;
 			uint8_t nr4 : 1;
 		} __attribute__ ((packed)) tut2;
@@ -224,26 +271,26 @@ struct savegame {
 			uint8_t nr12  : 1;
 		} __attribute__ ((packed)) tut3;
 
-		int16_t numbers00;
+		uint8_t unknown39[2];
 		uint16_t year;
 		uint16_t autumn; //boolean, true if autumn
 		uint16_t turn;
-		int16_t numbers01;
+		uint8_t unknown40[2];
 		uint16_t active_unit;
-		int16_t numbers02[3];
+		uint8_t unknown41[6];
 		uint16_t tribe_count;
 		uint16_t unit_count;
 		uint16_t colony_count;
-		int16_t numbers03[3];
+		uint8_t unknown42[6];
 		uint8_t difficulty; enum { DISCOVERER = 0, EXPLORER = 1, CONQUISTADOR = 2, GOVERNOR = 3, VICEROY = 4 }; //36
-		int16_t  numbers04;
+		uint8_t unknown43[2];
 		int8_t founding_father[25];
-		uint16_t numbers05[3];
+		uint8_t unknown44[6];
 		int16_t nation_relation[4];
-		int16_t numbers06[ 5];
+		uint8_t unknown45[10];
 		uint16_t expeditionary_force[4];
-		uint16_t numbers07[ 4]; //backup force, once you produce enough bells.
-		uint16_t count_down[16];
+		uint16_t backup_force[ 4]; // backup force, once you produce enough bells.
+		uint8_t unknown46[32]; // count down ?
 		struct event { //these are events that trigger the "woodframe"
 			uint16_t discovery_of_the_new_world     : 1;
 			uint16_t building_a_colony              : 1;
@@ -262,20 +309,20 @@ struct savegame {
 			uint16_t woodcut15                      : 1;
 			uint16_t woodcut16                      : 1;
 		} __attribute__ ((packed)) event;
-		uint8_t unkb[2];
+		uint8_t unknown05[2];
 	} __attribute__ ((packed)) head;
 
 	struct player {
 		char name[24];
 		char country_name[24];
-		uint8_t unk00;
-		uint8_t control; enum { PLAYER = 0, AI = 1 };
+		uint8_t unknown06;
+		uint8_t control; enum { PLAYER = 0, AI = 1, WITHDRAWN = 2, };
 		uint8_t founded_colonies; // founded colonies, probably used pick next colony name
-		uint8_t diplomacy;
+		uint8_t diplomacy; // ?
 	} __attribute__ ((packed)) player[4];
 
 	struct other {
-		uint8_t unkXX_xx[24];
+		uint8_t unknown07[24];
 	} __attribute__ ((packed)) other;
 
 	struct colony {
@@ -283,15 +330,18 @@ struct savegame {
 		uint8_t y;
 		char name[24];
 		uint8_t nation_id;
-		uint8_t unk0[ 4];
+		uint8_t unknown08[ 4];
 		uint8_t population;
 		uint8_t occupation[32];
 		uint8_t profession[32];
-		uint8_t unk6[16];
+		struct duration {
+		    uint8_t high : 4; // second one is first in byte
+		    uint8_t low : 4;
+        } __attribute__ ((packed)) duration[16];
 
 		int8_t tiles[ 8]; //represents tiles around the colony. idx to citizen.
 
-		uint8_t unk8[12];
+		uint8_t unknown10[12];
 
 		struct buildings {
 			uint32_t stockade : 3;
@@ -299,7 +349,7 @@ struct savegame {
 			uint32_t docks : 3;
 			uint32_t town_hall : 3;
 			uint32_t schoolhouse : 3;
-			uint32_t warehouse : 2;
+            uint32_t warehouse : 2;
 			uint32_t stables : 1;
 			uint32_t custom_house : 1;
 			uint32_t printing_press : 2;
@@ -307,12 +357,11 @@ struct savegame {
 			uint32_t tobacconists_house : 3;
 			uint32_t rum_distillers_house : 3;
 			uint32_t capitol : 2; /* not really in use */
-
 			uint16_t fur_traders_house : 3;
 			uint16_t carpenters_shop : 2;
 			uint16_t church : 2;
 			uint16_t blacksmiths_house : 3;
-			uint16_t unused : 6;
+			uint16_t unused05 : 6;
 		} __attribute__ ((packed)) buildings;
 
 		struct custom_house {
@@ -334,12 +383,12 @@ struct savegame {
 			uint16_t muskets : 1;
 		} __attribute__ ((packed)) custom_house;
 
-		uint8_t unka[6];
+		uint8_t unknown11[6];
 		uint16_t hammers;
 		uint8_t building_in_production;
-		uint8_t unkb[ 5];
+		uint8_t unknown12[ 5];
 		uint16_t stock[16];
-		uint8_t unkd[ 8];
+		uint8_t unknown13[ 8];
 		uint32_t rebel_dividend;
 		uint32_t rebel_divisor;
 	} __attribute__ ((packed)) *colony;
@@ -349,14 +398,14 @@ struct savegame {
 		uint8_t y;
 		uint8_t type;
 		uint8_t nation_id : 4; /* likely to be owner of unit, eng, fra, spa, dut, indian tribes, etc. */
-		uint8_t unk04 : 4;
-		uint8_t unk05;
-		uint8_t moves; /* Accumulated moves (3 between land, 1 on roads, etc.) */
-		uint8_t unk06;
-		uint8_t unk07;
-		uint8_t orders; enum { PLOW = 8, ROAD = 9 };
-
-		uint8_t unk08[ 3];
+		uint8_t unused06 : 4;
+		uint8_t unknown15;
+		uint8_t moves; /* moves spent? or accumulated moves (3 between land, 1 on roads, etc.) */
+		uint8_t unknown16[2];
+		uint8_t orders;
+		uint8_t goto_x;
+		uint8_t goto_y;
+		uint8_t unknown18;
 		uint8_t holds_occupied;
 		uint8_t cargo_item_0 : 4;
 		uint8_t cargo_item_1 : 4;
@@ -374,28 +423,30 @@ struct savegame {
 	} __attribute__ ((packed)) *unit;
 
 	struct nation {
-		uint8_t unk0;
+		uint8_t unknown19;
 		uint8_t tax_rate;
 		uint8_t recruit[3];
-		uint8_t unk1;
+		uint8_t unused07;
 		uint8_t recruit_count; //recruit penalty 120 + (count * 20) (does not go above 180)
-		uint8_t unk2[ 5];
+		uint8_t founding_fathers[4];
+		uint8_t unknown21;
 		uint16_t liberty_bells_total;
 		uint16_t liberty_bells_last_turn;
-		uint8_t unk3[ 2];
+		uint8_t unknown22[2];
 		int16_t next_founding_father;
 		uint16_t founding_father_count;
-		uint16_t ffc_high; //suspect founding_father_count is 32bit.
+		uint16_t unused08; //suspect founding_father_count is 32bit.
 		uint8_t villages_burned;
-		uint8_t unk4[5];
+		uint8_t unknown23[5];
 		uint16_t artillery_count; //artillery purchased in europe. 500 + (count * 100) price penalty.
 		uint16_t boycott_bitmap;
-		uint8_t unk5[ 8];
+		uint8_t unknown24[8];
 		uint32_t gold;
-		uint16_t crosses;
-		int16_t unk6[ 4];
+		uint16_t current_crosses;
+		uint16_t needed_crosses;
+		uint8_t unknown25[6];
 		uint8_t relation_by_indian[8]; enum { NOT_MET = 0x00, WAR = 0x20, PEACE = 0x60};
-		uint8_t unk7[12];
+		uint8_t unknown26[12];
 		struct trade {
 			uint8_t euro_price[16];
 			int16_t nr[16];
@@ -414,43 +465,41 @@ struct savegame {
 			uint8_t learned   : 1; //visited and learned skill
 			uint8_t capital   : 1;
 			uint8_t scouted   : 1; //visited by scout
-			uint8_t unk5      : 1;
-			uint8_t unk6      : 1;
-			uint8_t unk7      : 1;
-			uint8_t unk8      : 1;
+			uint8_t unused09  : 4;
 		} __attribute__ ((packed)) state;
 		uint8_t population;
-		int8_t mission; //ff if none, 0 1 2 3 = eng fra spa dut
-		uint8_t unk1[2];
-		uint8_t last_trade;
-		uint8_t unk2;
-		uint8_t panic;
-		uint8_t unk3[6];
-		uint8_t population_loss_in_current_turn; //due to attacks
+		uint8_t mission; //ff if none, 0 1 2 3 = eng fra spa dut
+		uint8_t unknown28[2];
+		uint8_t last_bought;
+		uint8_t last_sold;
+        struct alarm {
+            uint8_t friction;
+            uint8_t attacks;
+		} __attribute__ ((packed)) alarm[4];
 	} __attribute__ ((packed)) *tribe;
 
 	struct indian {
 		uint8_t capitol_x;
 		uint8_t capitol_y;
 		uint8_t tech;
-		uint8_t unk1[11];
+		uint8_t unknown31[11];
 		int16_t tons[16];
-		uint8_t unk2[12];
+		uint8_t unknown32[12];
 		uint8_t met_by_player[4];
-		uint8_t unk3[8]; 
+		uint8_t unknown33[8]; 
         uint16_t alarm_by_player[4];
 	} __attribute__ ((packed)) indian[8];
 
 	struct stuff {
-		uint8_t unk15[15];
+		uint8_t unknown34[15];
 		uint16_t counter_decreasing_on_new_colony;
-		uint16_t unk_short;
+		uint8_t unknown35[2];
 		uint16_t counter_increasing_on_new_colony;
-		uint8_t unk_big[696];
+		uint8_t unknown36[696];
 		uint16_t x;
 		uint16_t y;
 		uint8_t zoom_level;
-		uint8_t unk7;
+		uint8_t unknown37;
 		uint16_t viewport_x;
 		uint16_t viewport_y;
 	} __attribute__ ((packed)) stuff;
@@ -502,32 +551,6 @@ struct savegame {
 		} __attribute__ ((packed)) seen[58*72];
 	} __attribute__ ((packed)) map;
 
-	uint8_t tail[1502];
+	uint8_t unknown38[1502];
 
 } __attribute__ ((packed)) savegame;
-
-/// Given a map from keys to values, creates a new map from values to keys 
-template<typename K, typename V>
-static std::map<V, K> reverse_map(const std::map<K, V> &original) {
-    std::map<V, K> reversed;
-	for (const auto &pair : original)
-		reversed[pair.second] = pair.first;
-	return reversed;
-}
-static std::map<std::string, int> terrain_id {
-    {"tundra", 0},
-    {"desert", 1},
-    {"plains", 2},
-    {"prairie", 3},
-    {"grassland", 4},
-    {"savannah", 5},
-    {"swamp", 6},
-    {"marsh", 7},
-};
-static std::map<int, std::string> terrain_name = reverse_map(terrain_id);
-static std::map<std::string, int> special_id {
-    {"arctic", 0},
-    {"ocean", 1},
-    {"seas", 2},
-};
-static std::map<int, std::string> special_name = reverse_map(special_id);

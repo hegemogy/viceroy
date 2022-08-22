@@ -81,7 +81,7 @@ use Storable qw(dclone);
 
 sub printer {
     my ( $line, $style ) = @_;
-    die Dumper($line) if $line->{keys}->[-1] eq 'nation';
+    die Dumper($line)                 if $line->{keys}->[-1] eq 'nation';
     die "Expects a line and a style!" if !$line || !$style;
     my ( $keys, $hints, $order, $type, $items, $total )
         = map { $line->{$_} // die "expected \$line->$_! " . Dumper($line) }
@@ -103,6 +103,15 @@ sub printer {
     $set_key =~ s/i\]\[j/i+j*58/;
     $set_key = "sg->$set_key";
 
+    $set_label =~ s/[\[\]]/./g;
+    $set_label =~ s/\.+/./g;
+    $set_label =~ s/\.$//g;
+
+    my $char_label = $set_label;
+    my $char_key   = $set_key;
+    $char_label =~ s/\.\D$//;
+    $char_key   =~ s/\[\D\]$//;
+
     my @return;
     if ( $style eq 'standard' ) {
         push @return, "[$order] $label $type ($total) $hints\n";
@@ -117,38 +126,47 @@ sub printer {
         }
     }
     elsif ( $style eq 'if_block' ) {
-        $set_label =~ s/[\[\]]/./g;
-        $set_label =~ s/\.+/./g;
-        $set_label =~ s/\.$//g;
         push @return, <<ENDTEXT;
 if (input.compare(\"$set_label\") == 0) {
         $set_key = int_value;
 ENDTEXT
         if ( $type eq 'char' ) {
-            $set_label =~ s/\.\D$//;
-            $set_key   =~ s/\[\D\]$//;
             push @return, <<ENDTEXT;
-if (input.compare(\"$set_label\") == 0) {
-        strcpy($set_key,value.substr(0,$items).c_str());
+if (input.compare(\"$char_label\") == 0) {
+        strcpy($char_key,value.substr(0,$items).c_str());
 ENDTEXT
         }
+    }
+    elsif ( $style eq 'api_list' ) {
+        push @return, $set_label, ( $type eq 'char' ? $char_label : () );
     }
     else {
         die "Style '$style' not supported!";
     }
     return @return;
 }
-my @drilled   = drill( dclone \%DATA );
+my @api_items = sort { $a->{order} <=> $b->{order} } drill( dclone \%DATA );
+my $api_list  = '"'
+    . (
+    join "\",\n${INDENT}\"",
+    map { printer( dclone $_, 'api_list' ) } @api_items
+    ) . '",';
 my $if_blocks = join "${INDENT}}\n${INDENT}else ",
-    map  { printer( dclone $_, 'if_block' ) }
-    sort { $a->{order} <=> $b->{order} }
-    grep { $_->{keys}->[-1] ne 'base' } @drilled;
+    map { printer( dclone $_, 'if_block' ) }
+    grep { $_->{keys}->[-1] ne 'base' } @api_items;
+my $decode_progress = decode_progress(@api_items);
 
 path('./savegame_api.h')->spew(<<ENDTEXT);
 #include <iostream>
 #include <string>
 #include <stdio.h>
 #include <savegame.h>
+
+static const float decode_progress_estimate = $decode_progress; 
+
+static const char *api_list[] = {
+    $api_list
+};
 
 void set_value( struct savegame *sg, std::string input, std::string value, int i, int j) {
     int int_value = atoi(value.c_str());
@@ -252,4 +270,42 @@ sub get_iterations {
     my ( $infinite, $name, $items )
         = ( $line =~ m/\Q$match\E (\*)?([a-z0-9_]+)\[?([0-9\*]+)?\]?;/ );
     return $infinite // $items // ( $name ? 1 : 0 );
+}
+
+sub decode_progress {
+    my @items        = @_;
+    my $total_bits   = 0;
+    my $unknown_bits = 0;
+    my %amplifier    = (
+        player => 4,
+        nation => 4,
+        indian => 8,
+        map    => ( 58 * 72 ),
+        tribe  => 60,            # estimated/average
+        unit   => 120,           # estimated/average
+        colony => 20,            # estimated/average
+    );
+    foreach my $item (@items) {
+        my ( $total, $keys )
+            = map { $item->{$_} // die "Expected '$_'! " . Dumper($_) }
+            'total', 'keys';
+
+        # c++ union means the 'full' bits are already counted
+        next if $keys->[-1] eq 'full';
+
+        my $multiply = $amplifier{ $keys->[0] } // 1;
+        $total_bits += ( $total * $multiply );
+        my $joined = join '.', @{$keys};
+        if ( $joined =~ m/unknown/ ) {
+            $unknown_bits += ( $total * $multiply );
+        }
+
+        print "$joined ("
+            . ( $total * $multiply / 8 ) . ") : "
+            . ( 1 - ( $unknown_bits / $total_bits ) ) . "\n";
+    }
+
+    print join ' ', ( $unknown_bits / 8 ), "of", ( $total_bits / 8 ),
+        "unknown\n";
+    return 1 - ( $unknown_bits / $total_bits );
 }

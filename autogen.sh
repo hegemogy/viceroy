@@ -7,4 +7,3 @@ autoheader $AH_OPTS
 automake --add-missing --foreign
 ./configure
 make
-

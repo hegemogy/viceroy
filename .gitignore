@@ -14,3 +14,5 @@ savegame.o
 stamp-h1
 savegame_api.h
 savegame_json.h
+libgcc_s_dw2-1.dll
+savegame.exe
